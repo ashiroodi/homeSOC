@@ -29,18 +29,7 @@ in any browser to explore the UI without deploying anything.
 
 ## How it works
 
-```
-┌─────────────┐  process/file/network/auth   ┌──────────────────────────────┐
-│   agent     │ ───── HTTP + enroll key ────▶ │            server            │
-│ (per host)  │      batched events           │   FastAPI · SQLite · engine  │
-└─────────────┘                               │                              │
-                                              │  per-event signature match   │
-┌─────────────┐    browser (HTTP)             │       │ alerts                │
-│  analyst    │ ◀───────────────────────────  │       ▼  dashboard + JSON API │
-└─────────────┘                               └──────────────┬───────────────┘
-                                                  opt-in,     ▼
-                                                  per alert   Anthropic API (HTTPS)
-```
+<img width="1536" height="1024" alt="image" src="https://github.com/user-attachments/assets/a7499c35-a248-41a0-9fc0-0c49f8274be2" />
 
 **Server** (`server/app`) — a FastAPI app with two faces:
 
