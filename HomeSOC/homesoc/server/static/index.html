@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HomeSOC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="noise"></div>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">▟</span>
+      <span class="brand-name">HOME<b>SOC</b></span>
+      <span class="brand-sub" id="conn-state">connecting…</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab on" data-view="alerts" id="tab-alerts">Alerts</button>
+      <button class="tab" data-view="rules" id="tab-rules">Rules</button>
+    </nav>
+    <div class="counters" id="counters"></div>
+    <div class="topbar-right">
+      <span class="meta" id="meta-devices">0 devices</span>
+      <span class="meta" id="meta-rules">0 rules</span>
+      <button class="btn ghost" id="btn-settings">Settings</button>
+    </div>
+  </header>
+
+  <main class="layout" id="view-alerts">
+    <aside class="fleet">
+      <div class="panel-head">Fleet</div>
+      <div class="fleet-list" id="fleet-list"></div>
+    </aside>
+
+    <section class="queue">
+      <div class="queue-head">
+        <div class="panel-head">Alerts</div>
+        <div class="filters">
+          <select id="f-status">
+            <option value="">all states</option>
+            <option value="new">new</option>
+            <option value="investigating">investigating</option>
+          </select>
+          <select id="f-severity">
+            <option value="">all severities</option>
+            <option value="critical">critical</option>
+            <option value="high">high</option>
+            <option value="medium">medium</option>
+            <option value="low">low</option>
+          </select>
+        </div>
+      </div>
+      <div class="alert-table" id="alert-table"></div>
+    </section>
+  </main>
+
+  <main class="rules-layout" id="view-rules" hidden>
+    <div class="rules-head">
+      <div class="panel-head" style="padding-left:0">Detection rules</div>
+      <div class="rules-controls">
+        <select id="rf-source">
+          <option value="">all sources</option>
+          <option value="builtin">built-in</option>
+          <option value="custom">custom</option>
+        </select>
+        <select id="rf-severity">
+          <option value="">all severities</option>
+          <option value="critical">critical</option>
+          <option value="high">high</option>
+          <option value="medium">medium</option>
+          <option value="low">low</option>
+        </select>
+        <button class="btn" id="btn-new-rule">New rule</button>
+      </div>
+    </div>
+    <div class="rules-note">Built-in rules are read-only. Custom rules you create here are stored on the
+      server and merged into live detection immediately — no restart, no file editing.</div>
+    <div class="rules-table" id="rules-table"></div>
+  </main>
+
+  <!-- Alert story drawer -->
+  <div class="drawer-scrim" id="drawer-scrim"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true"></aside>
+
+  <!-- Settings modal -->
+  <div class="modal-scrim" id="settings-scrim">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="btn ghost" id="settings-close">Close</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">Signature detection runs without any of this. The Claude
+          token only enables optional behavioral analysis on an alert you choose.
+          It is stored on the server and never shown back in full.</p>
+        <label class="field">
+          <span>Behavioral analysis</span>
+          <span class="toggle">
+            <input type="checkbox" id="set-enabled" />
+            <span>Enable Claude analysis</span>
+          </span>
+        </label>
+        <label class="field">
+          <span>Claude API token <em id="token-state"></em></span>
+          <input type="password" id="set-token" placeholder="sk-ant-…  (leave blank to keep current)" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Model</span>
+          <input type="text" id="set-model" placeholder="claude-sonnet-4-6" />
+        </label>
+        <div class="modal-actions">
+          <button class="btn" id="set-save">Save settings</button>
+          <span class="save-state" id="save-state"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rule editor modal -->
+  <div class="modal-scrim" id="rule-scrim">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="rule-title">
+      <div class="modal-head">
+        <h2 id="rule-title">New rule</h2>
+        <button class="btn ghost" id="rule-close">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="re-grid">
+          <div class="re-form">
+            <label class="field"><span>Rule ID</span>
+              <input id="re-id" type="text" placeholder="auto from title (a custom- prefix is added)" autocomplete="off" /></label>
+            <label class="field"><span>Title</span>
+              <input id="re-title" type="text" placeholder="Short, specific name" autocomplete="off" /></label>
+            <div class="re-row2">
+              <label class="field"><span>Severity</span>
+                <select id="re-severity">
+                  <option value="low">low</option>
+                  <option value="medium">medium</option>
+                  <option value="high" selected>high</option>
+                  <option value="critical">critical</option>
+                </select></label>
+              <label class="field"><span>Applies to</span>
+                <select id="re-category">
+                  <option value="">any category</option>
+                  <option value="process">process</option>
+                  <option value="file">file</option>
+                  <option value="network">network</option>
+                  <option value="auth">auth</option>
+                </select></label>
+            </div>
+            <label class="field"><span>Platforms <em>(none = all)</em></span>
+              <span class="re-checks">
+                <label><input type="checkbox" value="linux" class="re-plat" /> linux</label>
+                <label><input type="checkbox" value="windows" class="re-plat" /> windows</label>
+                <label><input type="checkbox" value="darwin" class="re-plat" /> macOS</label>
+              </span></label>
+            <label class="field"><span>Description</span>
+              <textarea id="re-desc" rows="2"></textarea></label>
+            <div class="re-row2">
+              <label class="field"><span>MITRE techniques</span>
+                <input id="re-mitre" type="text" placeholder="T1059.001, T1027" autocomplete="off" /></label>
+              <label class="field"><span>References</span>
+                <textarea id="re-refs" rows="2" placeholder="one URL per line"></textarea></label>
+            </div>
+            <div class="field">
+              <span>Match conditions <em>(all must match)</em></span>
+              <div id="re-conditions"></div>
+              <button class="btn ghost sm" id="re-add-cond">+ Add condition</button>
+            </div>
+          </div>
+          <div class="re-side">
+            <div class="re-side-head">YAML preview</div>
+            <pre class="code re-yaml" id="re-yaml"></pre>
+            <div class="re-side-head">Test against a sample event</div>
+            <textarea id="re-sample" class="re-sample" rows="7" spellcheck="false"
+              placeholder='{"category":"process","process":{"cmdline":"..."}}'></textarea>
+            <div class="re-test-actions">
+              <button class="btn ghost sm" id="re-example">Load example</button>
+              <button class="btn ghost sm" id="re-test">Test match</button>
+              <span class="re-test-out" id="re-test-out"></span>
+            </div>
+          </div>
+        </div>
+        <div class="re-footer">
+          <button class="btn ghost" id="re-validate">Validate</button>
+          <span class="re-status" id="re-status"></span>
+          <span class="re-spacer"></span>
+          <button class="btn ghost danger" id="re-delete" hidden>Delete</button>
+          <button class="btn ghost" id="re-cancel">Cancel</button>
+          <button class="btn" id="re-save">Save rule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <datalist id="re-fields">
+    <option value="process.name"></option>
+    <option value="process.exe"></option>
+    <option value="process.cmdline"></option>
+    <option value="process.username"></option>
+    <option value="process.parent_name"></option>
+    <option value="process.pid"></option>
+    <option value="process.ppid"></option>
+    <option value="file.path"></option>
+    <option value="file.name"></option>
+    <option value="action"></option>
+    <option value="network.process_name"></option>
+    <option value="network.raddr"></option>
+    <option value="network.rport"></option>
+    <option value="network.proto"></option>
+    <option value="network.status"></option>
+    <option value="auth.user"></option>
+    <option value="auth.result"></option>
+    <option value="auth.method"></option>
+    <option value="auth.source_ip"></option>
+    <option value="auth.logon_type"></option>
+  </datalist>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

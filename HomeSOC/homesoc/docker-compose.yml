@@ -1,0 +1,17 @@
+services:
+  homesoc-server:
+    build: ./server
+    container_name: homesoc-server
+    restart: unless-stopped
+    ports:
+      - "${HOMESOC_PORT:-8080}:8080"
+    environment:
+      # Set via deploy.sh or your shell. Agents must send the same key.
+      HOMESOC_ENROLL_KEY: "${HOMESOC_ENROLL_KEY:-changeme}"
+    volumes:
+      - homesoc-data:/data
+      # Edit rules on the host and POST /api/rules/reload to hot-load them:
+      - ./server/rules:/srv/rules
+
+volumes:
+  homesoc-data:

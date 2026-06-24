@@ -1,0 +1,90 @@
+# HomeSOC signature rules — macOS
+---
+id: mac-curl-pipe-shell
+title: Remote script piped to a shell
+severity: high
+category: process
+platform: [darwin]
+description: curl/wget piped to sh/bash/zsh — drive-by install.
+mitre: [T1059.004, T1105]
+detection:
+  match:
+    - field: process.cmdline
+      op: regex
+      values: ['(curl|wget)\b[^|]*\|\s*(sudo\s+)?(ba|z)?sh\b']
+---
+id: mac-osascript-shell
+title: osascript running a shell command
+severity: medium
+category: process
+platform: [darwin]
+description: >
+  AppleScript "do shell script" — scripting-based execution. The bare "-e"
+  match was dropped; osascript -e is common in legitimate automation.
+mitre: [T1059.002]
+detection:
+  match:
+    - field: process.name
+      op: equals
+      value: osascript
+    - field: process.cmdline
+      op: regex
+      values: ['do\s+shell\s+script']
+---
+id: mac-launch-persistence
+title: LaunchAgent / LaunchDaemon plist written
+severity: medium
+category: file
+platform: [darwin]
+description: New/modified plist under LaunchAgents or LaunchDaemons — persistence.
+mitre: [T1543.001, T1543.004]
+detection:
+  match:
+    - field: file.path
+      op: regex
+      values: ['/Library/LaunchAgents/', '/Library/LaunchDaemons/']
+    - field: action
+      op: in
+      values: [create, modify, move]
+---
+id: mac-gatekeeper-disable
+title: Gatekeeper assessment disabled
+severity: high
+category: process
+platform: [darwin]
+description: spctl --master-disable turns off Gatekeeper — defense evasion.
+mitre: [T1553.001]
+detection:
+  match:
+    - field: process.cmdline
+      op: regex
+      values: ['spctl\s+--master-disable']
+---
+id: mac-tcc-db-access
+title: Direct access to TCC privacy database
+severity: high
+category: process
+platform: [darwin]
+description: sqlite3 reading/writing TCC.db, or tccutil reset — privacy/permissions tampering.
+mitre: [T1548]
+detection:
+  match:
+    - field: process.cmdline
+      op: regex
+      values: ['TCC\.db', 'tccutil\s+reset']
+---
+id: mac-dscl-user-add
+title: Local account created via dscl
+severity: medium
+category: process
+platform: [darwin]
+description: dscl . -create on /Users — local account creation/persistence.
+mitre: [T1136.001]
+detection:
+  match:
+    - field: process.name
+      op: equals
+      value: dscl
+    - field: process.cmdline
+      op: regex
+      values: ['-create\s+/Users/']

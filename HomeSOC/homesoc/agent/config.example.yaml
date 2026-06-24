@@ -1,0 +1,23 @@
+# HomeSOC agent configuration. Copy to config.yaml and edit, or let the agent
+# prompt you on first run (it writes this file for you).
+
+# Base URL of the HomeSOC server on your LAN.
+server: "http://192.168.1.10:8080"
+
+# Must match HOMESOC_ENROLL_KEY set on the server (docker-compose.yml).
+enroll_key: "changeme"
+
+# Optional: override the directories watched for file events. If omitted, the
+# agent uses sensible per-OS defaults (temp dirs, Downloads, persistence paths).
+# watch_paths:
+#   - /etc
+#   - /tmp
+#   - /home/me/Downloads
+
+# Optional tuning (seconds).
+# process_interval: 1.5     # process-table sampling cadence
+# network_interval: 3.0     # socket-table sampling cadence
+# ship_interval: 3.0        # how often batches are POSTed
+
+# Optional: where to persist the enrolled device id.
+# state_file: "homesoc_state.json"

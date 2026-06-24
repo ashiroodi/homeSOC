@@ -1,0 +1,67 @@
+# HomeSOC signature rules — network + auth (cross-platform)
+#
+# Volumetric detections (brute force, beaconing) are intentionally absent: they
+# need windowed aggregation, which the v1 engine doesn't do, and firing per
+# single failed login just floods the queue. The auth rule below is the
+# high-signal exception (success, not failure). Add aggregation, then add the
+# rate-based rules.
+---
+id: net-shell-egress
+title: Interpreter/LOLBIN making external connection
+severity: high
+category: network
+description: >
+  A shell or known LOLBIN holding an established connection to a public IP —
+  likely C2 or staging. General interpreters (python/perl/ruby) were dropped
+  from this list: their outbound traffic is overwhelmingly benign in a dev/home
+  environment and was the single biggest false-positive source.
+mitre: [T1071, T1059]
+detection:
+  match:
+    - field: network.process_name
+      op: in
+      values: [bash, sh, zsh, dash, nc, ncat, netcat,
+               powershell.exe, pwsh.exe, cmd.exe,
+               certutil.exe, mshta.exe, rundll32.exe, regsvr32.exe, bitsadmin.exe]
+    - field: network.raddr
+      op: ip_public
+    - field: network.status
+      op: in
+      values: [ESTABLISHED, SYN_SENT]
+---
+id: net-blocklist-ip
+title: Connection to known-bad IP (blocklist)
+severity: critical
+category: network
+description: >
+  Outbound connection to an operator-supplied blocklist. Ships empty so it never
+  fires by default; add your own indicators (CIDRs accepted) to light it up.
+  This is the highest-fidelity network rule — it only matches IPs you assert.
+mitre: [T1071]
+detection:
+  match:
+    - field: network.raddr
+      op: ip_in
+      values: []   # e.g. ["198.51.100.0/24", "203.0.113.7"]
+---
+id: auth-ssh-external-root
+title: Successful external SSH login as a privileged account
+severity: high
+category: auth
+description: >
+  Interactive SSH success for root/admin from a public source IP. High-signal
+  on its own; failures are not alerted (they need aggregation to be meaningful).
+mitre: [T1078, T1021.004]
+detection:
+  match:
+    - field: auth.method
+      op: equals
+      value: ssh
+    - field: auth.result
+      op: equals
+      value: success
+    - field: auth.user
+      op: in
+      values: [root, admin, administrator]
+    - field: auth.source_ip
+      op: ip_public

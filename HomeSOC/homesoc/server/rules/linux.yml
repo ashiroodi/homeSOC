@@ -1,0 +1,121 @@
+# HomeSOC signature rules — Linux
+# All conditions in detection.match are AND-ed. Tuned for high signal: a hit
+# should be worth an analyst's time, not a tuning chore.
+---
+id: lin-reverse-shell-devtcp
+title: Bash /dev/tcp reverse shell
+severity: critical
+category: process
+platform: [linux]
+description: Interactive bash redirected to a /dev/tcp socket — classic reverse shell.
+mitre: [T1059.004, T1071.001]
+detection:
+  match:
+    - field: process.cmdline
+      op: regex
+      values: ['/dev/(tcp|udp)/', 'bash\s+-i']
+references:
+  - https://attack.mitre.org/techniques/T1059/004/
+---
+id: lin-netcat-exec
+title: Netcat with command execution flag
+severity: high
+category: process
+platform: [linux]
+description: nc/ncat invoked with -e/-c to bind or reverse a shell.
+mitre: [T1059.004]
+detection:
+  match:
+    - field: process.name
+      op: in
+      values: [nc, ncat, netcat]
+    - field: process.cmdline
+      op: regex
+      values: ['\s-(e|c)\b']
+---
+id: lin-curl-pipe-shell
+title: Remote script piped to a shell
+severity: high
+category: process
+platform: [linux]
+description: curl/wget output piped directly into bash/sh — drive-by install pattern.
+mitre: [T1059.004, T1105]
+detection:
+  match:
+    - field: process.cmdline
+      op: regex
+      values: ['(curl|wget)\b[^|]*\|\s*(sudo\s+)?(ba)?sh\b']
+---
+id: lin-base64-decode-pipe-shell
+title: Base64-decoded payload piped to shell
+severity: high
+category: process
+platform: [linux]
+description: base64 -d output piped into an interpreter — common obfuscated loader.
+mitre: [T1140, T1059.004]
+detection:
+  match:
+    - field: process.cmdline
+      op: regex
+      values: ['base64\s+(-d|--decode)[^|]*\|\s*(ba)?sh\b']
+---
+id: lin-ld-preload-write
+title: Write to /etc/ld.so.preload
+severity: critical
+category: file
+platform: [linux]
+description: Modification of ld.so.preload — userland rootkit / library injection persistence.
+mitre: [T1574.006]
+detection:
+  match:
+    - field: file.path
+      op: equals
+      value: /etc/ld.so.preload
+    - field: action
+      op: in
+      values: [create, modify, move]
+---
+id: lin-cron-persistence
+title: New file in a cron directory
+severity: medium
+category: file
+platform: [linux]
+description: File created/modified under /etc/cron.* or cron spool — scheduled-task persistence.
+mitre: [T1053.003]
+detection:
+  match:
+    - field: file.path
+      op: regex
+      values: ['^/etc/cron', '^/var/spool/cron']
+    - field: action
+      op: in
+      values: [create, modify, move]
+---
+id: lin-history-tamper
+title: Shell history disabled or cleared
+severity: medium
+category: process
+platform: [linux]
+description: HISTFILE unset or history file emptied — anti-forensic defense evasion.
+mitre: [T1070.003]
+detection:
+  match:
+    - field: process.cmdline
+      op: regex
+      values: ['unset\s+HISTFILE', 'export\s+HISTFILE=/dev/null', '>\s*~?/?\.bash_history']
+---
+id: lin-shm-exec
+title: Execution from shared memory
+severity: high
+category: process
+platform: [linux]
+description: >
+  Binary executed from /dev/shm (or /run/shm). Almost never legitimate; common
+  fileless-staging path. (/tmp execution was deliberately excluded — too many
+  benign installers run from /tmp to alert on cleanly.)
+mitre: [T1620, T1036]
+detection:
+  match:
+    - field: process.exe
+      op: regex
+      values: ['^/dev/shm/', '^/run/shm/']

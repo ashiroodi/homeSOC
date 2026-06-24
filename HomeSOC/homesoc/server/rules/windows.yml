@@ -1,0 +1,178 @@
+# HomeSOC signature rules — Windows
+# Tuned so noisy LOLBINs (schtasks, hidden PowerShell, recon) only fire on the
+# attacker-shaped variant, not on routine admin/installer activity.
+---
+id: win-powershell-encoded
+title: PowerShell encoded command
+severity: high
+category: process
+platform: [windows]
+description: powershell.exe launched with -EncodedCommand / -enc — common obfuscation.
+mitre: [T1059.001, T1027]
+detection:
+  match:
+    - field: process.name
+      op: in
+      values: [powershell.exe, pwsh.exe]
+    - field: process.cmdline
+      op: regex
+      values: ['\s-e(nc|ncodedcommand)?\b\s+[A-Za-z0-9+/=]{30,}']
+references:
+  - https://attack.mitre.org/techniques/T1059/001/
+---
+id: win-powershell-suspicious-loader
+title: PowerShell hidden window with download/exec
+severity: high
+category: process
+platform: [windows]
+description: >
+  Hidden/no-profile PowerShell combined with a download or in-memory exec
+  indicator. The bare "-w hidden" check was dropped on its own (installers use
+  it); this requires the loader behaviour alongside it.
+mitre: [T1059.001]
+detection:
+  match:
+    - field: process.name
+      op: in
+      values: [powershell.exe, pwsh.exe]
+    - field: process.cmdline
+      op: regex
+      values: ['-w\s+hidden', '-windowstyle\s+hidden']
+    - field: process.cmdline
+      op: regex
+      values: ['DownloadString', 'DownloadFile', 'Invoke-Expression', '\bIEX\b',
+               'FromBase64String', 'Net\.WebClient', 'Invoke-WebRequest', 'https?://']
+---
+id: win-certutil-download
+title: certutil used to download a file
+severity: high
+category: process
+platform: [windows]
+description: certutil -urlcache/-f used as a LOLBIN downloader.
+mitre: [T1105, T1218]
+detection:
+  match:
+    - field: process.name
+      op: equals
+      value: certutil.exe
+    - field: process.cmdline
+      op: regex
+      values: ['-urlcache', '-f\b.*http']
+---
+id: win-mshta-remote
+title: mshta executing remote content
+severity: high
+category: process
+platform: [windows]
+description: mshta.exe pointed at a URL or script — LOLBIN execution.
+mitre: [T1218.005]
+detection:
+  match:
+    - field: process.name
+      op: equals
+      value: mshta.exe
+    - field: process.cmdline
+      op: regex
+      values: ['https?://', 'javascript:', 'vbscript:']
+---
+id: win-rundll32-suspicious
+title: rundll32 with URL or script reference
+severity: medium
+category: process
+platform: [windows]
+description: rundll32 invoking a URL or javascript — proxy execution.
+mitre: [T1218.011]
+detection:
+  match:
+    - field: process.name
+      op: equals
+      value: rundll32.exe
+    - field: process.cmdline
+      op: regex
+      values: ['https?://', 'javascript:', 'mshtml']
+---
+id: win-bitsadmin-transfer
+title: bitsadmin file transfer
+severity: high
+category: process
+platform: [windows]
+description: bitsadmin /transfer used to stage payloads.
+mitre: [T1197, T1105]
+detection:
+  match:
+    - field: process.name
+      op: equals
+      value: bitsadmin.exe
+    - field: process.cmdline
+      op: contains
+      value: /transfer
+---
+id: win-wmic-process-create
+title: wmic process call create
+severity: medium
+category: process
+platform: [windows]
+description: wmic spawning a process — lateral/defense-evasion LOLBIN.
+mitre: [T1047]
+detection:
+  match:
+    - field: process.name
+      op: equals
+      value: wmic.exe
+    - field: process.cmdline
+      op: regex
+      values: ['process\s+call\s+create']
+---
+id: win-vssadmin-delete-shadows
+title: Volume shadow copies deleted
+severity: critical
+category: process
+platform: [windows]
+description: vssadmin/wmic deleting shadow copies — common pre-ransomware step.
+mitre: [T1490]
+detection:
+  match:
+    - field: process.cmdline
+      op: regex
+      values: ['vssadmin\s+delete\s+shadows', 'shadowcopy\s+delete', 'wbadmin\s+delete\s+catalog']
+---
+id: win-schtasks-suspicious
+title: Scheduled task running a suspicious payload
+severity: medium
+category: process
+platform: [windows]
+description: >
+  schtasks /create whose action is an interpreter, LOLBIN, web URL, or a binary
+  under temp/appdata. Plain /create was dropped — software updaters register
+  tasks constantly; this requires the payload to look like tooling.
+mitre: [T1053.005]
+detection:
+  match:
+    - field: process.name
+      op: equals
+      value: schtasks.exe
+    - field: process.cmdline
+      op: contains
+      value: /create
+    - field: process.cmdline
+      op: regex
+      values: ['powershell', 'pwsh', 'cmd\s+/c', '-e(nc|ncodedcommand)?\b', 'mshta',
+               'rundll32', 'regsvr32', 'bitsadmin', 'certutil', 'https?://',
+               '%temp%', '%appdata%', '\\temp\\', '\\appdata\\', '\.ps1', '\.vbs', '\.js\b']
+---
+id: win-recon-domain
+title: Domain/privilege reconnaissance
+severity: low
+category: process
+platform: [windows]
+description: >
+  High-signal discovery only — domain-controller listing, Domain Admins
+  enumeration, or whoami /all|/priv. Bare "whoami" and "net user" were dropped;
+  they fire on routine admin and login scripts.
+mitre: [T1033, T1087, T1018]
+detection:
+  match:
+    - field: process.cmdline
+      op: regex
+      values: ['nltest\s+/dclist', 'net\s+group\s+"?domain admins',
+               'net\s+group\s+.*/domain', 'whoami\s+/all', 'whoami\s+/priv']

