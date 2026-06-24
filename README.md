@@ -27,6 +27,8 @@ styled console.
 A standalone, click-through preview is included as `homesoc-demo.html` — open it
 in any browser to explore the UI without deploying anything.
 
+<img width="1057" height="632" alt="image" src="https://github.com/user-attachments/assets/4d10345e-e380-417e-9eee-630e459c6f13" />
+
 ## How it works
 
 ```
